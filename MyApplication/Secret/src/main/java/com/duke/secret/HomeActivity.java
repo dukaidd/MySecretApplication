@@ -14,7 +14,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Matrix;
-import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -24,6 +23,8 @@ import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -34,6 +35,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -45,9 +47,15 @@ import com.duke.fragments.MyCollectedSecretFragment;
 import com.duke.fragments.MySecretFragment;
 import com.duke.fragments.MySecretPathFragment;
 import com.duke.fragments.SecretChatFragment;
+import com.duke.fragments.SettingsFragment;
 import com.easemob.chat.EMChat;
 import com.easemob.chat.EMChatManager;
+import com.easemob.chat.EMConversation;
 import com.easemob.chat.EMMessage;
+import com.easemob.easeui.EaseConstant;
+import com.easemob.easeui.domain.EaseUser;
+import com.easemob.easeui.ui.EaseContactListFragment;
+import com.easemob.easeui.ui.EaseConversationListFragment;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -58,7 +66,9 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import cn.bmob.v3.BmobUser;
 import cn.bmob.v3.datatype.BmobFile;
@@ -86,6 +96,14 @@ public class HomeActivity extends BaseActivity
     private ObjectAnimator mAnimator;
     private AppBarLayout home_bar;
     private NewMessageBroadcastReceiver1 msgReceiver;
+    private TextView unreadLabel;
+    private Button[] mTabs;
+    private EaseConversationListFragment conversationListFragment;
+    private EaseContactListFragment contactListFragment;
+    private SettingsFragment settingFragment;
+    private Fragment[] fragments;
+    private int index;
+    private int currentTabIndex;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -138,6 +156,34 @@ public class HomeActivity extends BaseActivity
         setAvatarAndBG(user);
         nav_username.setText(user.getUsername().toString());
         nav_email.setText(user.getEmail().toString());
+
+        unreadLabel = (TextView) findViewById(R.id.unread_msg_number);
+        mTabs = new Button[3];
+        mTabs[0] = (Button) findViewById(R.id.btn_conversation);
+        mTabs[1] = (Button) findViewById(R.id.btn_address_list);
+        mTabs[2] = (Button) findViewById(R.id.btn_setting);
+        // set first tab as selected
+        mTabs[0].setSelected(true);
+
+        conversationListFragment = new EaseConversationListFragment();
+        contactListFragment = new EaseContactListFragment();
+        settingFragment = new SettingsFragment();
+        contactListFragment.setContactsMap(getContacts());
+        conversationListFragment.setConversationListItemClickListener(new EaseConversationListFragment.EaseConversationListItemClickListener() {
+
+            @Override
+            public void onListItemClicked(EMConversation conversation) {
+                startActivity(new Intent(HomeActivity.this, ChatActivity.class).putExtra(EaseConstant.EXTRA_USER_ID, conversation.getUserName()));
+            }
+        });
+        contactListFragment.setContactListItemClickListener(new EaseContactListFragment.EaseContactListItemClickListener() {
+
+            @Override
+            public void onListItemClicked(EaseUser user) {
+                startActivity(new Intent(HomeActivity.this, ChatActivity.class).putExtra(EaseConstant.EXTRA_USER_ID, user.getUsername()));
+            }
+        });
+        fragments = new Fragment[] { conversationListFragment, contactListFragment, settingFragment };
     }
     private void setAvatarAndBG(Bitmap bitmap){
         nav_avatar.setImageBitmap(bitmap);
@@ -211,7 +257,7 @@ public class HomeActivity extends BaseActivity
         mspf = new MySecretPathFragment();
         mcsf = new MyCollectedSecretFragment();
         scf = new SecretChatFragment();
-        getSupportFragmentManager().beginTransaction().replace(R.id.home_content, af).commit();
+        getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, af).commit();
     }
 
     private long current;
@@ -226,12 +272,10 @@ public class HomeActivity extends BaseActivity
                 HomeActivity.this.finish();
             } else {
                 current = System.currentTimeMillis();
-//                Toast("再次点击退出");
                 Snackbar.make(fab, "再次点击返回退出", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
         }
-
     }
 
     @Override
@@ -294,24 +338,24 @@ public class HomeActivity extends BaseActivity
     public void changeFragment(int postion) {
         switch (postion) {
             case 0:
-                getSupportFragmentManager().beginTransaction().replace(R.id.home_content, af).commit();
+                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, af).commit();
                 fragmentShowing = 0;
                 break;
             case 1:
-                getSupportFragmentManager().beginTransaction().replace(R.id.home_content, msf).commit();
+                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, msf).commit();
                 fragmentShowing = 1;
                 break;
             case 2:
-                getSupportFragmentManager().beginTransaction().replace(R.id.home_content, mspf).commit();
+                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, mspf).commit();
                 fragmentShowing = 2;
                 break;
             case 3:
                 fragmentShowing = 3;
-                getSupportFragmentManager().beginTransaction().replace(R.id.home_content, mcsf).commit();
+                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, mcsf).commit();
                 break;
             case 4:
                 fragmentShowing = 4;
-                getSupportFragmentManager().beginTransaction().replace(R.id.home_content, scf).commit();
+                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, conversationListFragment).commit();
                 break;
         }
     }
@@ -548,9 +592,7 @@ public class HomeActivity extends BaseActivity
 
             @Override
             public void onProgress(int i, int i1, int i2, int i3) {
-
             }
-
             @Override
             public void onError(int i, String s) {
                 toast("上传失败:" + s);
@@ -577,5 +619,49 @@ public class HomeActivity extends BaseActivity
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(msgReceiver);
+    }
+    /**
+     * onTabClicked
+     *
+     * @param view
+     */
+    public void onTabClicked(View view) {
+        switch (view.getId()) {
+            case R.id.btn_conversation:
+                index = 0;
+                break;
+            case R.id.btn_address_list:
+                index = 1;
+                break;
+            case R.id.btn_setting:
+                index = 2;
+                break;
+        }
+        if (currentTabIndex != index) {
+            FragmentTransaction trx = getSupportFragmentManager().beginTransaction();
+            trx.hide(fragments[currentTabIndex]);
+            if (!fragments[index].isAdded()) {
+                trx.add(R.id.fragment_container, fragments[index]);
+            }
+            trx.show(fragments[index]).commit();
+        }
+        mTabs[currentTabIndex].setSelected(false);
+        // set current tab as selected.
+        mTabs[index].setSelected(true);
+        currentTabIndex = index;
+    }
+
+    /**
+     * prepared users, password is "123456"
+     * you can use these user to test
+     * @return
+     */
+    private Map<String, EaseUser> getContacts(){
+        Map<String, EaseUser> contacts = new HashMap<String, EaseUser>();
+        for(int i = 1; i <= 10; i++){
+            EaseUser user = new EaseUser("easeuitest" + i);
+            contacts.put("easeuitest" + i, user);
+        }
+        return contacts;
     }
 }
