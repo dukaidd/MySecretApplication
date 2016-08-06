@@ -1,5 +1,6 @@
 package com.duke.fragments;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -8,8 +9,11 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
 
+import com.duke.secret.LoginActivity;
 import com.duke.secret.R;
 import com.easemob.chat.EMChatManager;
+
+import cn.bmob.v3.BmobUser;
 
 public class SettingsFragment extends Fragment{
     @Override
@@ -26,7 +30,10 @@ public class SettingsFragment extends Fragment{
             
             @Override
             public void onClick(View v) {
+                startActivity(new Intent(getActivity(), LoginActivity.class));
+                BmobUser.logOut();
                 EMChatManager.getInstance().logout();
+                getActivity().finish();
             }
         });
     }

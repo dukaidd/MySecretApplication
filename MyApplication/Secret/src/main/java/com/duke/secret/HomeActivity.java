@@ -48,6 +48,7 @@ import com.duke.fragments.MySecretFragment;
 import com.duke.fragments.MySecretPathFragment;
 import com.duke.fragments.SecretChatFragment;
 import com.duke.fragments.SettingsFragment;
+import com.duke.utils.BitmapUtil;
 import com.easemob.chat.EMChat;
 import com.easemob.chat.EMChatManager;
 import com.easemob.chat.EMConversation;
@@ -57,6 +58,8 @@ import com.easemob.easeui.domain.EaseUser;
 import com.easemob.easeui.ui.EaseContactListFragment;
 import com.easemob.easeui.ui.EaseConversationListFragment;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -183,9 +186,10 @@ public class HomeActivity extends BaseActivity
                 startActivity(new Intent(HomeActivity.this, ChatActivity.class).putExtra(EaseConstant.EXTRA_USER_ID, user.getUsername()));
             }
         });
-        fragments = new Fragment[] { conversationListFragment, contactListFragment, settingFragment };
+        fragments = new Fragment[]{conversationListFragment, contactListFragment, settingFragment};
     }
-    private void setAvatarAndBG(Bitmap bitmap){
+
+    private void setAvatarAndBG(Bitmap bitmap) {
         nav_avatar.setImageBitmap(bitmap);
         Palette.from(bitmap).generate(new Palette.PaletteAsyncListener() {
             // get muted color from bitmap using palette and set this to collapsible toolbar
@@ -203,9 +207,9 @@ public class HomeActivity extends BaseActivity
     }
 
     private void setAvatarAndBG(User user) {
-
         if (user.getAvatar() != null) {
             final String avatarUrl = user.getAvatar().getUrl();
+            BitmapUtil.getBitUtil(HomeActivity.this).display(nav_avatar, avatarUrl);
             new AsyncTask<String, Integer, Bitmap>() {
                 @Override
                 protected Bitmap doInBackground(String... params) {
@@ -232,20 +236,19 @@ public class HomeActivity extends BaseActivity
 
                 @Override
                 protected void onPostExecute(Bitmap bitmap) {
-                    nav_avatar.setImageBitmap(bitmap);
-                    Palette.from(bitmap).generate(new Palette.PaletteAsyncListener() {
-                        // get muted color from bitmap using palette and set this to collapsible toolbar
-                        @Override
-                        public void onGenerated(Palette palette) {
-                            // 通过Palette 来获取对应的色调
-                            Palette.Swatch vibrant =
-                                    palette.getDarkMutedSwatch();
-                            // 将颜色设置给相应的组件
-                            if (vibrant != null) {
-                                navigationHeader.setBackgroundColor(vibrant.getRgb());
+                        Palette.from(bitmap).generate(new Palette.PaletteAsyncListener() {
+                            // get muted color from bitmap using palette and set this to collapsible toolbar
+                            @Override
+                            public void onGenerated(Palette palette) {
+                                // 通过Palette 来获取对应的色调
+                                Palette.Swatch vibrant =
+                                        palette.getDarkMutedSwatch();
+                                // 将颜色设置给相应的组件
+                                if (vibrant != null) {
+                                    navigationHeader.setBackgroundColor(vibrant.getRgb());
+                                }
                             }
-                        }
-                    });
+                        });
                 }
             }.execute();
         }
@@ -519,13 +522,13 @@ public class HomeActivity extends BaseActivity
                 Uri uri = data.getData();
                 if (uri == null && data.hasExtra("data")) {
                     mbit = (Bitmap) data.getExtras().get("data");
-                    mbit = zoomImage(mbit, 100, 100);
+                    mbit = compressImage(mbit);
                     setAvatarAndBG(mbit);
                     saveBitmap(mbit);
                 } else {
                     try {
                         mbit = MediaStore.Images.Media.getBitmap(HomeActivity.this.getContentResolver(), uri);
-                        mbit = zoomImage(mbit, 100, 100);
+                        mbit = compressImage(mbit);
                         setAvatarAndBG(mbit);
                         saveBitmap(mbit);
                     } catch (FileNotFoundException e) {
@@ -539,20 +542,18 @@ public class HomeActivity extends BaseActivity
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-    public static Bitmap zoomImage(Bitmap bgimage, double newWidth,
-                                   double newHeight) {
-        // 获取这个图片的宽和高
-        float width = bgimage.getWidth();
-        float height = bgimage.getHeight();
-        // 创建操作图片用的matrix对象
-        Matrix matrix = new Matrix();
-        // 计算宽高缩放率
-        float scaleWidth = ((float) newWidth) / width;
-        float scaleHeight = ((float) newHeight) / height;
-        // 缩放图片动作
-        matrix.postScale(scaleWidth, scaleHeight);
-        Bitmap bitmap = Bitmap.createBitmap(bgimage, 0, 0, (int) width,
-                (int) height, matrix, true);
+    private Bitmap compressImage(Bitmap image) {
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        image.compress(Bitmap.CompressFormat.JPEG, 100, baos);//质量压缩方法，这里100表示不压缩，把压缩后的数据存放到baos中
+        int options = 100;
+        while (baos.toByteArray().length / 1024 > 100) {  //循环判断如果压缩后图片是否大于100kb,大于继续压缩
+            baos.reset();//重置baos即清空baos
+            image.compress(Bitmap.CompressFormat.JPEG, options, baos);//这里压缩options%，把压缩后的数据存放到baos中
+            options -= 10;//每次都减少10
+        }
+        ByteArrayInputStream isBm = new ByteArrayInputStream(baos.toByteArray());//把压缩后的数据baos存放到ByteArrayInputStream中
+        Bitmap bitmap = BitmapFactory.decodeStream(isBm, null, null);//把ByteArrayInputStream数据生成图片
         return bitmap;
     }
 
@@ -593,6 +594,7 @@ public class HomeActivity extends BaseActivity
             @Override
             public void onProgress(int i, int i1, int i2, int i3) {
             }
+
             @Override
             public void onError(int i, String s) {
                 toast("上传失败:" + s);
@@ -620,6 +622,7 @@ public class HomeActivity extends BaseActivity
         super.onDestroy();
         unregisterReceiver(msgReceiver);
     }
+
     /**
      * onTabClicked
      *
@@ -637,14 +640,15 @@ public class HomeActivity extends BaseActivity
                 index = 2;
                 break;
         }
-        if (currentTabIndex != index) {
-            FragmentTransaction trx = getSupportFragmentManager().beginTransaction();
-            trx.hide(fragments[currentTabIndex]);
-            if (!fragments[index].isAdded()) {
-                trx.add(R.id.fragment_container, fragments[index]);
-            }
-            trx.show(fragments[index]).commit();
-        }
+        getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, fragments[index]).commit();
+//        if (currentTabIndex != index) {
+//            FragmentTransaction trx = getSupportFragmentManager().beginTransaction();
+//            trx.hide(fragments[currentTabIndex]);
+//            if (!fragments[index].isAdded()) {
+//                trx.add(R.id.fragment_container, fragments[index]);
+//            }
+//            trx.show(fragments[index]).commit();
+//        }
         mTabs[currentTabIndex].setSelected(false);
         // set current tab as selected.
         mTabs[index].setSelected(true);
@@ -654,11 +658,12 @@ public class HomeActivity extends BaseActivity
     /**
      * prepared users, password is "123456"
      * you can use these user to test
+     *
      * @return
      */
-    private Map<String, EaseUser> getContacts(){
+    private Map<String, EaseUser> getContacts() {
         Map<String, EaseUser> contacts = new HashMap<String, EaseUser>();
-        for(int i = 1; i <= 10; i++){
+        for (int i = 1; i <= 10; i++) {
             EaseUser user = new EaseUser("easeuitest" + i);
             contacts.put("easeuitest" + i, user);
         }
