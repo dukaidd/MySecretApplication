@@ -19,10 +19,10 @@ import com.duke.beans.User;
 import com.duke.secret.HomeActivity;
 import com.duke.secret.R;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import cn.bmob.v3.BmobUser;
+import cn.bmob.v3.datatype.BmobRelation;
 import cn.bmob.v3.exception.BmobException;
 import cn.bmob.v3.listener.UpdateListener;
 
@@ -112,8 +112,8 @@ public class MPlvAdapter extends BaseAdapter implements OnClickListener {
     }
 
     private CharSequence getDiatance(int position) {
-        if (MyApplication.app.getLocations() != null && MyApplication.app.getLocations().size()!=0) {
-            BDLocation location = MyApplication.app.getLocations().get(0);
+        if (MyApplication.appInstance.getLocations() != null && MyApplication.appInstance.getLocations().size()!=0) {
+            BDLocation location = MyApplication.appInstance.getLocations().get(0);
             LatLng browsedIn = new LatLng(location.getLatitude(), location.getLongitude());
             LatLng createdIn = secrets.get(position).getLocation();
             long distanceMeters = (long) DistanceUtil.getDistance(browsedIn, createdIn);
@@ -164,6 +164,9 @@ public class MPlvAdapter extends BaseAdapter implements OnClickListener {
                         secret.setCollectedNum(secret.getCollectedNum() + 1);
                         String collectedUser = secret.getCollectedUsers() + "|" + curent_user + "|";
                         secret.setCollectedUsers(collectedUser);
+                        BmobRelation relation = new BmobRelation();
+                        relation.add(BmobUser.getCurrentUser());
+                        secret.setLikes(relation);
                         secret.update(new UpdateListener() {
                             @Override
                             public void done(BmobException e) {
@@ -182,6 +185,9 @@ public class MPlvAdapter extends BaseAdapter implements OnClickListener {
                         String collectedUser = secret.getCollectedUsers().replace("|" + curent_user + "|", "");
                         secret.setCollectedUsers(collectedUser);
                         secret.setCollectedNum(secret.getCollectedNum() - 1);
+                        BmobRelation relation = new BmobRelation();
+                        relation.remove(BmobUser.getCurrentUser());
+                        secret.setLikes(relation);
                         secret.update(new UpdateListener() {
 
                             @Override

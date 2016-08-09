@@ -14,7 +14,6 @@ import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
 import com.baidu.mapapi.map.Marker;
 import com.baidu.mapapi.map.MarkerOptions;
-import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.model.LatLng;
 import com.duke.app.MyApplication;
@@ -111,8 +110,8 @@ public class MySecretPathFragment extends BaseFragment implements OnMarkerClickL
 		mBaiduMap.setOnMarkerClickListener(this);
 		pd = new ProgressDialog(act);
 		pd.show();
-		LatLng pos = new LatLng(MyApplication.app.getLocations().get(0).getLatitude(),
-				MyApplication.app.getLocations().get(0).getLongitude());
+		LatLng pos = new LatLng(MyApplication.appInstance.getLocations().get(0).getLatitude(),
+				MyApplication.appInstance.getLocations().get(0).getLongitude());
 
 		BitmapDescriptor ic = BitmapDescriptorFactory.fromResource(R.drawable.ov_dot_blue);
 		OverlayOptions options = new MarkerOptions().position(pos).icon(ic);

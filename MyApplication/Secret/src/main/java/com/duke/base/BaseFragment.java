@@ -3,6 +3,7 @@ package com.duke.base;
 import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
 import android.content.DialogInterface.OnClickListener;
+
 import android.support.v4.app.Fragment;
 import android.view.View;
 import android.widget.Toast;

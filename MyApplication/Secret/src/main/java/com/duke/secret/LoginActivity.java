@@ -15,15 +15,25 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.duke.base.BaseActivity;
 import com.duke.beans.User;
 import com.easemob.EMCallBack;
 import com.easemob.chat.EMChatManager;
 import com.easemob.chat.EMGroupManager;
+import com.easemob.easeui.domain.EaseUser;
 
+import java.util.List;
+
+import cn.bmob.v3.BmobQuery;
+import cn.bmob.v3.BmobUser;
 import cn.bmob.v3.exception.BmobException;
+import cn.bmob.v3.listener.FindListener;
 import cn.bmob.v3.listener.SaveListener;
+import cn.bmob.v3.listener.UpdateListener;
+
+import static com.easemob.easeui.utils.EaseCommonUtils.setUserInitialLetter;
 
 /**
  * A login screen that offers login via email/password.
@@ -61,7 +71,6 @@ public class LoginActivity extends BaseActivity {
                 return false;
             }
         });
-
         Button mSignInButton = (Button) findViewById(R.id.login_button);
         Button mRegisterButton = (Button) findViewById(R.id.login_register_button);
         mRegisterButton.setOnClickListener(new OnClickListener() {
@@ -81,7 +90,6 @@ public class LoginActivity extends BaseActivity {
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
     }
-
     /**
      * Attempts to sign in or register the account specified by the login form.
      * If there are form errors (invalid email, missing fields, etc.), the

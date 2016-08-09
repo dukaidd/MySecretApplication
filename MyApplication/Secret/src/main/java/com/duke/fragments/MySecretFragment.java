@@ -2,7 +2,6 @@ package com.duke.fragments;
 
 import java.util.List;
 
-import com.duke.adapters.APlvAdapter;
 import com.duke.adapters.MPlvAdapter;
 import com.duke.base.BaseFragment;
 import com.duke.beans.Secret;
@@ -86,11 +85,11 @@ public class MySecretFragment extends BaseFragment implements OnClickListener {
 		startLayout.setPullLabel("下拉刷新");
 		startLayout.setRefreshingLabel("刷新中...");
 		startLayout.setReleaseLabel("释放刷新");
-		startLayout.setLastUpdatedLabel(StringUtils.getTime(System.currentTimeMillis()).substring(11,19));
+		startLayout.setLastUpdatedLabel(StringUtils.getTime(System.currentTimeMillis()).substring(11,16));
 		endLayout.setPullLabel("上拉加载更多");
 		endLayout.setRefreshingLabel("正在加载...");
 		endLayout.setReleaseLabel("释放加载更多");
-		endLayout.setLastUpdatedLabel(StringUtils.getTime(System.currentTimeMillis()).substring(11,19));
+		endLayout.setLastUpdatedLabel(StringUtils.getTime(System.currentTimeMillis()).substring(11,16));
 		Typeface typeface = Typeface.createFromAsset(act.getAssets(), "fonts/youyuan.ttf");
 		startLayout.setTextTypeface(typeface);
 		endLayout.setTextTypeface(typeface);
@@ -194,7 +193,6 @@ public class MySecretFragment extends BaseFragment implements OnClickListener {
 	@Override
 	public void onResume() {
 		super.onResume();
-		plv.setRefreshing();
 	}
 	private int direction;
 	private float mFirstY;
@@ -209,20 +207,22 @@ public class MySecretFragment extends BaseFragment implements OnClickListener {
 					break;
 				case MotionEvent.ACTION_MOVE:
 					mCurrentY = event.getY();
-					if(mCurrentY-mFirstY>mTouchSlop){
+					if (mCurrentY - mFirstY > mTouchSlop) {
 						direction = 0;
-					}else if(mFirstY-mCurrentY>mTouchSlop){
+					} else if (mFirstY - mCurrentY > mTouchSlop) {
 						direction = 1;
 					}
-					if(direction ==1){
-						if(mShow){
-							act.hideAnim(1);
-							mShow=!mShow;
+					if (direction == 1) {
+						if (mShow) {
+							act.hideToolbarAndFb(1);
+							act.hideBottomBar(1);
+							mShow = !mShow;
 						}
-					}else if(direction == 0){
-						if(!mShow){
-							act.hideAnim(0);
-							mShow=!mShow;
+					} else if (direction == 0) {
+						if (!mShow) {
+							act.hideToolbarAndFb(0);
+							act.hideBottomBar(0);
+							mShow = !mShow;
 						}
 					}
 					break;

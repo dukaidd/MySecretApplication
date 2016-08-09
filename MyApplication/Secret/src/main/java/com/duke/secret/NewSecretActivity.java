@@ -3,8 +3,6 @@ package com.duke.secret;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.AdapterView;
@@ -58,6 +56,7 @@ public class NewSecretActivity extends BaseActivity implements View.OnClickListe
         setContentView(R.layout.activity_new);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_new);
         setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -89,16 +88,17 @@ public class NewSecretActivity extends BaseActivity implements View.OnClickListe
                 secret_content.setBgColor(bgColor);
                 secret_content.setWeather(weather_content);
                 secret_content.setUsername(BmobUser.getCurrentUser(User.class).getUsername());
-                BDLocation location = MyApplication.app.getLocations().get(0);
+                BDLocation location = MyApplication.appInstance.getLocations().get(0);
                 LatLng loc = new LatLng(location.getLatitude(), location.getLongitude());
                 secret_content.setLocation(loc);
+                secret_content.setAuthor(BmobUser.getCurrentUser(User.class));
                 secret_content.save(new SaveListener() {
 
                     @Override
                     public void done(Object o, BmobException e) {
                         if (e == null) {
                             toast("成功新建秘密");
-                            MyApplication.app.setSecret(secret_content);
+                            MyApplication.appInstance.setSecret(secret_content);
                             finish();
                         } else {
                             toast("新建秘密失败" + e);
@@ -110,7 +110,6 @@ public class NewSecretActivity extends BaseActivity implements View.OnClickListe
 
             }
         });
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
     }
 
     private void initDatas() {
@@ -122,7 +121,7 @@ public class NewSecretActivity extends BaseActivity implements View.OnClickListe
     }
 
     private void initViewOper() {
-        String city = MyApplication.app.getLocations().get(0).getCity();
+        String city = MyApplication.appInstance.getLocations().get(0).getCity();
         if (city == null) {
             city = "上海";
         } else if (city.equals("")) {

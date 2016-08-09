@@ -1,34 +1,41 @@
 package com.duke.app;
 
-import android.app.ActivityManager;
 import android.app.Application;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.util.Log;
 
 import com.baidu.location.BDLocation;
 import com.baidu.mapapi.SDKInitializer;
+import com.duke.beans.Avatar;
 import com.duke.beans.Secret;
+import com.duke.beans.User;
 import com.duke.secret.ChatActivity;
-import com.easemob.chat.EMChat;
 import com.easemob.chat.EMChatOptions;
 import com.easemob.chat.EMMessage;
 import com.easemob.chat.OnNotificationClickListener;
+import com.easemob.easeui.EaseConstant;
+import com.easemob.easeui.controller.EaseUI;
+import com.easemob.easeui.domain.EaseUser;
 
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import cn.bmob.v3.Bmob;
+import cn.bmob.v3.BmobQuery;
+import cn.bmob.v3.exception.BmobException;
+import cn.bmob.v3.listener.FindListener;
 
 import static com.easemob.chat.EMChatManager.getInstance;
+import static com.easemob.easeui.utils.EaseCommonUtils.setUserInitialLetter;
 
 
 public class MyApplication extends Application {
-    public static MyApplication app;
+    public static MyApplication appInstance;
     private Secret secret;
     private List<BDLocation> locations = new ArrayList<BDLocation>();
     private boolean isOpen;
+    public static Map<String, EaseUser> contacts = new HashMap<>();
 
     public boolean isOpen() {
         return isOpen;
@@ -56,12 +63,34 @@ public class MyApplication extends Application {
 
     @Override
     public void onCreate() {
+        super.onCreate();
+        appInstance = this;
         initBomb();
         initBaidu();
-        initHuanXin();
+        initHuanxin();
         initNotification();
-        app = this;
-        super.onCreate();
+//        initContact();
+    }
+
+    private void initHuanxin() {
+        EaseUI.getInstance().init(this);
+        //get easeui appInstance
+        EaseUI easeUI = EaseUI.getInstance();
+        //需要easeui库显示用户头像和昵称设置此provider
+        easeUI.setUserProfileProvider(new EaseUI.EaseUserProfileProvider() {
+
+            @Override
+            public EaseUser getUser(String username) {
+                return getEaseUser(username);
+            }
+        });
+    }
+    private EaseUser getEaseUser(String username) {
+        EaseUser user = null;
+        if(contacts!=null){
+            contacts.get(username);
+        }
+        return user;
     }
 
     private void initNotification() {
@@ -70,44 +99,18 @@ public class MyApplication extends Application {
         EMChatOptions options = getInstance().getChatOptions();
         // 设置notification点击listener
         options.setOnNotificationClickListener(new OnNotificationClickListener() {
-
             @Override
             public Intent onNotificationClick(EMMessage message) {
+
                 Intent intent = new Intent(getApplicationContext(), ChatActivity.class);
+                intent.putExtra(EaseConstant.EXTRA_USER_ID, message.getFrom());
                 intent.putExtra("msg", message);
                 intent.putExtra("flag", 1);
+
                 return intent;
             }
         });
 
-    }
-
-
-    private void initHuanXin() {
-        int pid = android.os.Process.myPid();
-        String processAppName = getAppName(pid);
-        // 如果app启用了远程的service，此application:onCreate会被调用2次
-        // 为了防止环信SDK被初始化2次，加此判断会保证SDK被初始化1次
-        // 默认的app会在以包名为默认的process name下运行，如果查到的process name不是app的process
-        // name就立即返回
-
-        if (processAppName == null || !processAppName.equalsIgnoreCase("com.duke.secret")) {
-            Log.e("dk", "enter the service process!");
-            // "com.easemob.chatuidemo"为demo的包名，换到自己项目中要改成自己包名
-            // 则此application::onCreate 是被service 调用的，直接返回
-            return;
-        }
-
-        EMChat.getInstance().init(getApplicationContext());
-        /**
-         * debugMode == true 时为打开，sdk 会在log里输入调试信息
-         *
-         * @param debugMode
-         *            在做代码混淆的时候需要设置成false
-         */
-        EMChat.getInstance().setDebugMode(true);// 在做打包混淆时，要关闭debug模式，避免消耗不必要的资源
-        EMChatOptions chatOptions = getInstance().getChatOptions();
-        chatOptions.setNoticedByVibrate(false);
     }
 
     private void initBaidu() {
@@ -118,24 +121,93 @@ public class MyApplication extends Application {
     private void initBomb() {
         Bmob.initialize(getApplicationContext(), "5c1a8dced4ad68a93a762fef87da2652");
     }
-
-    private String getAppName(int pID) {
-        String processName = null;
-        ActivityManager am = (ActivityManager) this.getSystemService(ACTIVITY_SERVICE);
-        List l = am.getRunningAppProcesses();
-        Iterator i = l.iterator();
-        PackageManager pm = this.getPackageManager();
-        while (i.hasNext()) {
-            ActivityManager.RunningAppProcessInfo info = (ActivityManager.RunningAppProcessInfo) (i.next());
-            try {
-                if (info.pid == pID) {
-                    processName = info.processName;
-                    return processName;
+    private void initContact() {
+        BmobQuery<User> query = new BmobQuery<>();
+        query.setLimit(50);
+        query.findObjects(new FindListener<User>() {
+            @Override
+            public void done(List<User> list, BmobException e) {
+                if(e==null){
+                    if(list==null||list.equals("")){
+                        return;
+                    }
+                    addContacts(list);
                 }
-            } catch (Exception e) {
-                // Log.d("Process", "Error>> :"+ e.toString());
             }
+        });
+    }
+
+    public void addContacts(List<User> list) {
+        for(int i = 0;i<list.size();i++){
+            User user = list.get(i);
+            final EaseUser easeUser = new EaseUser(user.getUsername());
+            if(user.getAvatarUrl()!=null){
+                easeUser.setAvatar(user.getAvatarUrl());
+            }else{
+                BmobQuery<Avatar> query1 = new BmobQuery<Avatar>();
+                query1.addWhereEqualTo("user",user);
+                query1.findObjects(new FindListener<Avatar>() {
+                    @Override
+                    public void done(List<Avatar> list, BmobException e) {
+                        if(e==null){
+                            if(list==null||list.equals("")){
+                                return;
+                            }
+                            if(list.get(0)!=null&&list.get(0).getAvatar()!=null){
+                                String avatarUrl = list.get(0).getAvatar().getUrl();
+                                easeUser.setAvatar(avatarUrl);
+                            }
+                        }
+                    }
+                });
+            }
+            if(user.getNick()!=null){
+                easeUser.setNick(user.getNick());
+            }
+            setUserInitialLetter(easeUser);
+            if (MyApplication.appInstance.contacts == null) {
+                MyApplication.appInstance.contacts = new HashMap<String, EaseUser>();
+            }
+            MyApplication.getAppInstance().contacts.put(user.getUsername(),easeUser);
         }
-        return processName;
+    }
+    public void addContactsFromSecrets(List<Secret> list) {
+        for(int i = 0;i<list.size();i++){
+            User user = list.get(i).getAuthor();
+            final EaseUser easeUser = new EaseUser(user.getUsername());
+            if(user.getAvatarUrl()!=null){
+                easeUser.setAvatar(user.getAvatarUrl());
+            }else{
+                BmobQuery<Avatar> query1 = new BmobQuery<Avatar>();
+                query1.addWhereEqualTo("user",user);
+                query1.findObjects(new FindListener<Avatar>() {
+                    @Override
+                    public void done(List<Avatar> list, BmobException e) {
+                        if(e==null){
+                            if(list==null||list.equals("")){
+                                return;
+                            }
+                            if(list.get(0)!=null&&list.get(0).getAvatar()!=null){
+                                String avatarUrl = list.get(0).getAvatar().getUrl();
+                                easeUser.setAvatar(avatarUrl);
+                            }
+                        }
+                    }
+                });
+            }
+            if(user.getNick()!=null){
+                easeUser.setNick(user.getNick());
+            }
+            setUserInitialLetter(easeUser);
+            if (MyApplication.appInstance.contacts == null) {
+                MyApplication.appInstance.contacts = new HashMap<String, EaseUser>();
+            }
+            MyApplication.getAppInstance().contacts.put(user.getUsername(),easeUser);
+        }
+    }
+
+
+    public static MyApplication getAppInstance() {
+        return appInstance;
     }
 }

@@ -1,190 +1,137 @@
 package com.duke.secret;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
+import android.graphics.Color;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
-import android.widget.EditText;
-import android.widget.ListView;
-import android.widget.TextView;
+import android.widget.Toast;
 
-import com.duke.adapters.ChatlvAdapter;
-import com.duke.app.MyApplication;
-import com.duke.base.BaseActivity;
-import com.easemob.EMCallBack;
-import com.easemob.chat.EMChat;
-import com.easemob.chat.EMChatManager;
-import com.easemob.chat.EMConversation;
-import com.easemob.chat.EMMessage;
-import com.easemob.chat.TextMessageBody;
+import com.duke.beans.User;
+import com.easemob.easeui.EaseConstant;
+import com.easemob.easeui.ui.EaseBaseActivity;
+import com.easemob.easeui.ui.EaseChatFragment;
 
 import java.util.List;
 
-public class ChatActivity extends BaseActivity {
-    private Toolbar toolbar;
-    private List<EMMessage> messages;
-    private ListView lv;
-    private EditText text;
-    private String fromName;
-    private EMMessage msg;
-    private ChatlvAdapter adapter;
-    private int flag = 2;
-    private Handler hander = new Handler() {
-        public void handleMessage(android.os.Message msg) {
-            if (msg.what == 1) {
-                adapter.notifyDataSetChanged();
-                lv.setSelection(messages.size() - 1);
-            }
-        }
-    };
+import cn.bmob.v3.BmobQuery;
+import cn.bmob.v3.BmobUser;
+import cn.bmob.v3.datatype.BmobRelation;
+import cn.bmob.v3.exception.BmobException;
+import cn.bmob.v3.listener.FindListener;
+import cn.bmob.v3.listener.UpdateListener;
+
+public class ChatActivity extends EaseBaseActivity{
+    public static ChatActivity activityInstance;
+    private EaseChatFragment chatFragment;
+    private String toChatUsername;
+    public static final int CHATTYPE_SINGLE = 1;
+
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_new_chat);
-        toolbar = (Toolbar) findViewById(R.id.toolbar_chat);
+    protected void onCreate(Bundle arg0) {
+        super.onCreate(arg0);
+        setContentView(R.layout.activity_chat);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.activity_chat_bar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ChatActivity.this.finish();
+                onBackPressed();
             }
         });
-        MyApplication.app.setOpen(true);
-        flag = getIntent().getIntExtra("flag", 0);
-        if (flag == 0) {
-            fromName = getIntent().getStringExtra("name");
-        } else {
-            msg = getIntent().getParcelableExtra("msg");
-            fromName = msg.getFrom();
-        }
-        initDatas();
-        initViews();
-        initViewsOper();
-        ChatActivity.NewMessageBroadcastReceiver msgReceiver = new ChatActivity.NewMessageBroadcastReceiver();
-        IntentFilter intentFilter = new IntentFilter(EMChatManager.getInstance().getNewMessageBroadcastAction());
-        intentFilter.setPriority(3);
-        registerReceiver(msgReceiver, intentFilter);
-        EMChat.getInstance().setAppInited();
-    }
-    private void initDatas() {
-        EMConversation conversation = EMChatManager.getInstance().getConversation(fromName);
-        List<EMMessage> datas = conversation.getAllMessages();
-        messages = datas;
+        activityInstance = this;
+        //聊天人或群id
+        toChatUsername = getIntent().getExtras().getString(EaseConstant.EXTRA_USER_ID);
+//        Log.i("duke", "onCreate: "+toChatUsername);
+        chatFragment = new EaseChatFragment();
+        //传入参数
+        chatFragment.setArguments(getIntent().getExtras());
+        getSupportFragmentManager().beginTransaction().add(R.id.container, chatFragment).commit();
+        
     }
 
-    private void initViewsOper() {
-        toolbar.setTitle(fromName);
-        if (flag == 1) {
-            EMConversation conversation = EMChatManager.getInstance().getConversation(fromName);
-            conversation.addMessage(msg);
-            adapter.notifyDataSetChanged();
-            lv.setSelection(messages.size() - 1);
-        }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.activity_chat, menu);
+        return true;
     }
 
-    private void initViews() {
-        lv = (ListView) findViewById(R.id.act_chat_lv);
-        text = (EditText) findViewById(R.id.act_chat_text);
-        text.setOnKeyListener(onKey);
-        adapter = new ChatlvAdapter(this, messages);
-        lv.setAdapter(adapter);
-        lv.setSelection(messages.size() - 1);
-    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
 
-
-    public void click_send(View view) {
-        sendMessage();
-    }
-
-    private void sendMessage() {
-        String text_content = text.getText().toString().trim();
-        if (text_content == null || text_content.equals("")) {
-            toast("请不要发送空消息");
-            text.setText("");
-            return;
-        }
-        text.setText("");
-        // 获取到与聊天人的会话对象。参数username为聊天人的userid或者groupid，后文中的username皆是如此
-        EMConversation conversation = EMChatManager.getInstance().getConversation(fromName);
-        // 创建一条文本消息
-        EMMessage message = EMMessage.createSendMessage(EMMessage.Type.TXT);
-        // 如果是群聊，设置chattype,默认是单聊
-        // message.setChatType(ChatType.GroupChat);
-        // 设置消息body
-        TextMessageBody txtBody = new TextMessageBody(text_content);
-        message.addBody(txtBody);
-        // 设置接收人
-        message.setReceipt(fromName);
-        // 把消息加入到此会话对象中
-        conversation.addMessage(message);
-        // 发送消息
-        EMChatManager.getInstance().sendMessage(message, new EMCallBack() {
-
-            @Override
-            public void onError(int arg0, String arg1) {
-                // TODO Auto-generated method stub
-
-            }
-
-            @Override
-            public void onProgress(int arg0, String arg1) {
-                // TODO Auto-generated method stub
-            }
-
-            @Override
-            public void onSuccess() {
-                // TODO Auto-generated method stub
-                hander.sendEmptyMessage(1);
-            }
-        });
-
-    }
-
-    View.OnKeyListener onKey = new View.OnKeyListener() {
-        public boolean onKey(View v, int keyCode, KeyEvent event) {
-            int action = event.getAction();
-            if (keyCode == KeyEvent.KEYCODE_ENTER) {
-                if (action == KeyEvent.ACTION_DOWN) {
-                    sendMessage();
-                    return true;
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.activity_menu_add) {
+            final User user = BmobUser.getCurrentUser(User.class);
+            BmobQuery<User> query = new BmobQuery<>();
+            query.addWhereEqualTo("username",toChatUsername);
+            query.findObjects(new FindListener<User>() {
+                @Override
+                public void done(List<User> list, BmobException e) {
+                    if(e==null){
+                        if(list==null||list.equals("")){
+                            return;
+                        }
+                        if(list.get(0)!=null){
+                            BmobRelation relation = new BmobRelation();
+                            relation.add(list.get(0));
+                            user.setFriends_relation(relation);
+                            user.update(new UpdateListener() {
+                                @Override
+                                public void done(BmobException e) {
+                                    if(e==null){
+                                        Toast.makeText(ChatActivity.this,"已添加为联系人",Toast.LENGTH_SHORT).show();
+                                    }else{
+                                        Toast.makeText(ChatActivity.this,"添加联系人失败"+e,Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            });
+                        }
+                    }else{
+                        Toast.makeText(ChatActivity.this,"添加联系人失败"+e,Toast.LENGTH_SHORT).show();
+                    }
                 }
+            });
 
-            }
-            return false;
+        }else  if(id == R.id.activity_menu_clear){
+            chatFragment.emptyHistory();
         }
-    };
 
-     class NewMessageBroadcastReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            // 消息id
-            String msgId = intent.getStringExtra("msgid");
-            // 发消息的人的username(userid)
-            String msgFrom = intent.getStringExtra("from");
-            // 消息类型，文本，图片，语音消息等,这里返回的值为msg.type.ordinal()。
-            // 所以消息type实际为是enum类型
-            int msgType = intent.getIntExtra("type", 0);
-            Log.d("main", "new message id:" + msgId + " from:" + msgFrom + " type:" + msgType);
-            // 更方便的方法是通过msgId直接获取整个message
-            EMMessage message = EMChatManager.getInstance().getMessage(msgId);
-            EMConversation conversation = EMChatManager.getInstance().getConversation(msgFrom);
-            conversation.addMessage(message);
-            adapter.notifyDataSetChanged();
-            lv.setSelection(messages.size() - 1);
-        }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
     protected void onDestroy() {
-        // TODO Auto-generated method stub
-        MyApplication.app.setOpen(false);
         super.onDestroy();
+        activityInstance = null;
+    }
+    
+    @Override
+    protected void onNewIntent(Intent intent) {
+        // 点击notification bar进入聊天页面，保证只有一个聊天页面
+        String username = intent.getStringExtra("userId");
+        if (toChatUsername.equals(username))
+            super.onNewIntent(intent);
+        else {
+            finish();
+            startActivity(intent);
+        }
+
+    }
+    @Override
+    public void onBackPressed() {
+        chatFragment.onBackPressed();
+    }
+    
+    public String getToChatUsername(){
+        return toChatUsername;
     }
 }

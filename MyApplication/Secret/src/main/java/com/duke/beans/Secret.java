@@ -5,6 +5,8 @@ import com.baidu.mapapi.model.LatLng;
 import java.util.List;
 
 import cn.bmob.v3.BmobObject;
+import cn.bmob.v3.datatype.BmobFile;
+import cn.bmob.v3.datatype.BmobRelation;
 
 public class Secret extends BmobObject {
     private int id;
@@ -17,16 +19,41 @@ public class Secret extends BmobObject {
     private boolean isCollected;
     private int collectedNum;
     private String collectedUsers;
-    private List<Answer> answers;
+    private User author;//帖子的发布者，这里体现的是一对一的关系，该帖子属于某个用户
+    private BmobFile image;//帖子图片
+    private BmobRelation likes;//多对多关系：用于存储喜欢该帖子的所有用户
+    private String avatarUrl;
 
-    public List<Answer> getAnswers() {
-
-        return answers;
+    public String getAvatarUrl() {
+        return avatarUrl;
     }
 
-    public void setAnswers(List<Answer> answers) {
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
 
-        this.answers = answers;
+    public User getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(User author) {
+        this.author = author;
+    }
+
+    public BmobFile getImage() {
+        return image;
+    }
+
+    public void setImage(BmobFile image) {
+        this.image = image;
+    }
+
+    public BmobRelation getLikes() {
+        return likes;
+    }
+
+    public void setLikes(BmobRelation likes) {
+        this.likes = likes;
     }
 
     public int getCollectedNum() {

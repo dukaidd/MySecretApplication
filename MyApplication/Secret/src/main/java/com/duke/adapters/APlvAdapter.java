@@ -2,6 +2,7 @@ package com.duke.adapters;
 
 import android.content.Intent;
 import android.graphics.Typeface;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
@@ -11,21 +12,37 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.toolbox.ImageLoader;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.NetworkImageView;
+import com.android.volley.toolbox.Volley;
 import com.baidu.location.BDLocation;
 import com.baidu.mapapi.model.LatLng;
 import com.baidu.mapapi.utils.DistanceUtil;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.duke.app.MyApplication;
+import com.duke.base.BitmapCache;
+import com.duke.beans.Avatar;
 import com.duke.beans.Secret;
 import com.duke.beans.User;
+import com.duke.customview.CircleImageView;
 import com.duke.secret.ChatActivity;
 import com.duke.secret.HomeActivity;
 import com.duke.secret.R;
+import com.duke.utils.BitmapUtil;
+import com.duke.utils.StringUtils;
+import com.easemob.easeui.EaseConstant;
+import com.easemob.easeui.domain.EaseUser;
+import com.easemob.easeui.utils.EaseUserUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 
+import cn.bmob.v3.BmobQuery;
 import cn.bmob.v3.BmobUser;
+import cn.bmob.v3.datatype.BmobRelation;
 import cn.bmob.v3.exception.BmobException;
+import cn.bmob.v3.listener.FindListener;
 import cn.bmob.v3.listener.UpdateListener;
 
 public class APlvAdapter extends BaseAdapter implements OnClickListener {
@@ -33,11 +50,14 @@ public class APlvAdapter extends BaseAdapter implements OnClickListener {
     private List<Secret> secrets;
     private Secret secret;
     private String curent_user;
-
+    private RequestQueue queue;
+    private ImageLoader imageLoader;
     public APlvAdapter(HomeActivity act, List<Secret> secrets) {
         super();
         this.act = act;
         this.secrets = secrets;
+        queue = Volley.newRequestQueue(act);
+        imageLoader = new ImageLoader(queue, new BitmapCache());
         curent_user = BmobUser.getCurrentUser(User.class).getUsername();
     }
 
@@ -67,7 +87,6 @@ public class APlvAdapter extends BaseAdapter implements OnClickListener {
             vh = new ViewHolder();
             vh.text = (TextView) convertView.findViewById(R.id.item_aplv_text);
             vh.time1 = (TextView) convertView.findViewById(R.id.item_aplv_time1);
-            vh.time2 = (TextView) convertView.findViewById(R.id.item_aplv_time2);
             vh.distance = (TextView) convertView.findViewById(R.id.item_aplv_distance);
             vh.weather = (TextView) convertView.findViewById(R.id.item_aplv_weather);
             vh.sel = (Button) convertView.findViewById(R.id.item_aplv_chat);
@@ -76,38 +95,67 @@ public class APlvAdapter extends BaseAdapter implements OnClickListener {
             vh.like = (Button) convertView.findViewById(R.id.item_aplv_like);
             vh.like.setOnClickListener(this);
             vh.likedNum = (TextView) convertView.findViewById(R.id.item_aplv_likednum);
+            vh.avatar = (CircleImageView) convertView.findViewById(R.id.item_aplv_avatar);
             convertView.setTag(vh);
         } else {
             vh = (ViewHolder) convertView.getTag();
         }
-
-        vh.text.setText(secrets.get(position).getText());
-        vh.text.setTextColor(secrets.get(position).getTextColor());
-        vh.ll.setBackgroundColor(secrets.get(position).getBgColor());
-        vh.time1.setText(secrets.get(position).getCreatedAt().split(" ")[0]);
-        vh.time1.setTextColor(secrets.get(position).getTextColor());
-        vh.time2.setText(secrets.get(position).getCreatedAt().split(" ")[1]);
-        vh.time2.setTextColor(secrets.get(position).getTextColor());
+        final Secret secret = secrets.get(position);
+        vh.text.setText(secret.getText());
+        vh.text.setTextColor(secret.getTextColor());
+        vh.ll.setBackgroundColor(secret.getBgColor());
+        vh.time1.setText(StringUtils.parseTime(secret.getCreatedAt()));
         vh.distance.setText(getDiatance(position));
-        vh.distance.setTextColor(secrets.get(position).getTextColor());
-        vh.weather.setText(secrets.get(position).getWeather());
-        vh.weather.setTextColor(secrets.get(position).getTextColor());
+        vh.weather.setText(secret.getWeather());
+        final String imgUrl = secret.getAvatarUrl();
+            if (imgUrl != null && !imgUrl.equals("")) {
+                BitmapUtil.getBitUtil(act).display(vh.avatar,imgUrl);
+            }else{
+                BmobQuery<Avatar> query = new BmobQuery<>();
+                query.addWhereEqualTo("username",secret.getUsername());
+                final ViewHolder finalVh = vh;
+                query.findObjects(new FindListener<Avatar>() {
+                    @Override
+                    public void done(List<Avatar> list, BmobException e) {
+                        if(e==null){
+                            if(list==null||list.equals("")){
+                                finalVh.avatar.setImageResource(R.drawable.ease_default_avatar);
+                            }else if(list.get(0).getAvatar()!=null){
+                                secret.setAvatarUrl(list.get(0).getAvatar().getUrl());
+                                BitmapUtil.getBitUtil(act).display(finalVh.avatar,list.get(0).getAvatar().getUrl());
+                                secret.update(new UpdateListener() {
+                                    @Override
+                                    public void done(BmobException e) {
+                                        if(e == null){
+                                            Log.i("duke",secret.getAvatarUrl());
+                                        }
+                                    }
+                                });
+                            }else{
+                                finalVh.avatar.setImageResource(R.drawable.ease_default_avatar);
+                            }
+                        }else{
+                            finalVh.avatar.setImageResource(R.drawable.ease_default_avatar);
+                        }
+                    }
+                });
 
-        if (secrets.get(position).getCollectedUsers() != null
-                && secrets.get(position).getCollectedUsers().contains("|" + curent_user + "|")) {
+            }
+
+//        EaseUserUtils.setUserAvatar(act, secret.getUsername(), vh.avatar);
+        if (secret.getCollectedUsers() != null
+                && secret.getCollectedUsers().contains("|" + curent_user + "|")) {
             vh.like.setBackgroundResource(R.drawable.love_p);
         } else {
             vh.like.setBackgroundResource(R.drawable.love_n);
         }
-        vh.like.setTag(secrets.get(position));
-        vh.sel.setTag(secrets.get(position));
-        vh.likedNum.setText(secrets.get(position).getCollectedNum() + "");
-        vh.likedNum.setTextColor(secrets.get(position).getTextColor());
+        vh.like.setTag(secret);
+        vh.sel.setTag(secret);
+        vh.likedNum.setText(secret.getCollectedNum() + "");
 
         Typeface typeface = Typeface.createFromAsset(act.getAssets(), "fonts/mi.ttf");
         vh.text.setTypeface(typeface);
         vh.time1.setTypeface(typeface);
-        vh.time2.setTypeface(typeface);
         vh.distance.setTypeface(typeface);
         vh.weather.setTypeface(typeface);
         vh.likedNum.setTypeface(typeface);
@@ -115,8 +163,8 @@ public class APlvAdapter extends BaseAdapter implements OnClickListener {
     }
 
     private CharSequence getDiatance(int position) {
-        if (MyApplication.app.getLocations() != null && MyApplication.app.getLocations().size() != 0) {
-            BDLocation location = MyApplication.app.getLocations().get(0);
+        if (MyApplication.appInstance.getLocations() != null && MyApplication.appInstance.getLocations().size() != 0) {
+            BDLocation location = MyApplication.appInstance.getLocations().get(0);
             LatLng browsedIn = new LatLng(location.getLatitude(), location.getLongitude());
             LatLng createdIn = secrets.get(position).getLocation();
             long distanceMeters = (long) DistanceUtil.getDistance(browsedIn, createdIn);
@@ -131,10 +179,11 @@ public class APlvAdapter extends BaseAdapter implements OnClickListener {
     }
 
     static class ViewHolder {
-        private TextView text, time1, time2, distance, weather, likedNum;
+        private TextView text, time1, distance, weather, likedNum;
         private Button sel;
         private Button like;
         private LinearLayout ll;
+        private CircleImageView avatar;
     }
 
     @Override
@@ -145,13 +194,13 @@ public class APlvAdapter extends BaseAdapter implements OnClickListener {
                 Intent intent = new Intent();
                 intent.setClass(act, ChatActivity.class);
                 String fromName = secret.getUsername();
-                intent.putExtra("name", fromName);
+                intent.putExtra(EaseConstant.EXTRA_USER_ID, fromName);
                 intent.putExtra("flag", 0);
                 act.startActivity(intent);
                 break;
             case R.id.item_aplv_like:
                 LinearLayout linearLayout = (LinearLayout) v.getParent();
-                TextView collectedNum = (TextView) linearLayout.getChildAt(3);
+                TextView collectedNum = (TextView) linearLayout.getChildAt(4);
                 secret = (Secret) v.getTag();
                 if (!(secret == null || secret.equals(""))) {
                     if (secret.getCollectedUsers() == null
@@ -161,12 +210,15 @@ public class APlvAdapter extends BaseAdapter implements OnClickListener {
                         secret.setCollectedNum(secret.getCollectedNum() + 1);
                         String collectedUser = secret.getCollectedUsers() + "|" + curent_user + "|";
                         secret.setCollectedUsers(collectedUser);
+                        BmobRelation relation = new BmobRelation();
+                        relation.add(BmobUser.getCurrentUser());
+                        secret.setLikes(relation);
                         secret.update(new UpdateListener() {
                             @Override
                             public void done(BmobException e) {
-                                if(e==null){
+                                if (e == null) {
                                     Toast.makeText(act, "收藏成功", Toast.LENGTH_SHORT).show();
-                                }else{
+                                } else {
                                     Toast.makeText(act, "收藏失败" + e, Toast.LENGTH_SHORT).show();
                                 }
                             }
@@ -179,13 +231,16 @@ public class APlvAdapter extends BaseAdapter implements OnClickListener {
                         String collectedUser = secret.getCollectedUsers().replace("|" + curent_user + "|", "");
                         secret.setCollectedUsers(collectedUser);
                         secret.setCollectedNum(secret.getCollectedNum() - 1);
+                        BmobRelation relation = new BmobRelation();
+                        relation.remove(BmobUser.getCurrentUser());
+                        secret.setLikes(relation);
                         secret.update(new UpdateListener() {
 
                             @Override
                             public void done(BmobException e) {
-                                if(e==null){
+                                if (e == null) {
                                     Toast.makeText(act, "取消收藏", Toast.LENGTH_SHORT).show();
-                                }else{
+                                } else {
                                     Toast.makeText(act, "取消收藏失败" + e, Toast.LENGTH_SHORT).show();
                                 }
                             }

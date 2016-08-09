@@ -114,20 +114,22 @@ public class MyCollectedSecretFragment extends BaseFragment {
                     break;
                 case MotionEvent.ACTION_MOVE:
                     mCurrentY = event.getY();
-                    if(mCurrentY-mFirstY>mTouchSlop){
+                    if (mCurrentY - mFirstY > mTouchSlop) {
                         direction = 0;
-                    }else if(mFirstY-mCurrentY>mTouchSlop){
+                    } else if (mFirstY - mCurrentY > mTouchSlop) {
                         direction = 1;
                     }
-                    if(direction ==1){
-                        if(mShow){
-                            act.hideAnim(1);
-                            mShow=!mShow;
+                    if (direction == 1) {
+                        if (mShow) {
+                            act.hideToolbarAndFb(1);
+                            act.hideBottomBar(1);
+                            mShow = !mShow;
                         }
-                    }else if(direction == 0){
-                        if(!mShow){
-                            act.hideAnim(0);
-                            mShow=!mShow;
+                    } else if (direction == 0) {
+                        if (!mShow) {
+                            act.hideToolbarAndFb(0);
+                            act.hideBottomBar(0);
+                            mShow = !mShow;
                         }
                     }
                     break;

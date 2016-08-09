@@ -10,7 +10,6 @@ import com.duke.app.MyApplication;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
-import android.util.Log;
 
 public class LocationService extends Service {
 	private LocationClient lc;
@@ -37,10 +36,10 @@ public class LocationService extends Service {
 			@Override
 			public void onReceiveLocation(BDLocation arg0) {
 				// TODO Auto-generated method stub
-				if (MyApplication.app.getLocations().size() > 5) {
-					MyApplication.app.getLocations().clear();
+				if (MyApplication.appInstance.getLocations().size() > 5) {
+					MyApplication.appInstance.getLocations().clear();
 				}
-				MyApplication.app.getLocations().add(arg0);
+				MyApplication.appInstance.getLocations().add(arg0);
 			}
 		});
 		super.onCreate();

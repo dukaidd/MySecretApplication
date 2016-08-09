@@ -16,17 +16,21 @@ import android.widget.AbsListView;
 import android.widget.ListView;
 
 import com.duke.adapters.APlvAdapter;
+import com.duke.app.MyApplication;
 import com.duke.base.BaseFragment;
 import com.duke.beans.Secret;
+import com.duke.beans.User;
 import com.duke.secret.HomeActivity;
 import com.duke.secret.NewSecretActivity;
 import com.duke.secret.R;
 import com.duke.utils.StringUtils;
+import com.easemob.easeui.domain.EaseUser;
 import com.handmark.pulltorefresh.library.ILoadingLayout;
 import com.handmark.pulltorefresh.library.PullToRefreshBase;
 import com.handmark.pulltorefresh.library.PullToRefreshListView;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import cn.bmob.v3.BmobQuery;
@@ -42,6 +46,7 @@ public class AllSecretFragment extends BaseFragment {
     private ProgressDialog pd;
     private int count = 1;
     private ListView listView;
+
 
     @Override
     public void onAttach(Activity activity) {
@@ -69,6 +74,7 @@ public class AllSecretFragment extends BaseFragment {
     private void initDatas() {
         BmobQuery<Secret> query = new BmobQuery<Secret>();
         query.setLimit(10);
+        query.include("author");
         query.order("-createdAt");
         query.findObjects(new FindListener<Secret>() {
 
@@ -81,8 +87,9 @@ public class AllSecretFragment extends BaseFragment {
                     } else {
                         secrets = list;
                     }
+                    MyApplication.getAppInstance().addContactsFromSecrets(list);
                     adapter = new APlvAdapter(act, secrets);
-                    AllSecretFragment.this.plv.setAdapter(adapter);
+                    plv.setAdapter(adapter);
                     if (secrets.size() == 0) {
                         dialog("提示", "还没有秘密,前去创建", android.R.drawable.ic_dialog_alert, "创建", "取消",
                                 new DialogInterface.OnClickListener() {
@@ -95,6 +102,7 @@ public class AllSecretFragment extends BaseFragment {
                 } else {
                     pd.dismiss();
                     toast("获取秘密失败:" + e);
+                    Log.i("duke",e.toString());
                 }
             }
         });
@@ -121,7 +129,7 @@ public class AllSecretFragment extends BaseFragment {
         startLayout.setPullLabel("下拉刷新");
         startLayout.setRefreshingLabel("刷新中...");
         startLayout.setReleaseLabel("释放刷新");
-        startLayout.setLastUpdatedLabel(StringUtils.getTime(System.currentTimeMillis()).substring(11,19));
+        startLayout.setLastUpdatedLabel(StringUtils.getTime(System.currentTimeMillis()).substring(11, 16));
         endLayout.setPullLabel("上拉加载更多");
         endLayout.setRefreshingLabel("正在加载...");
         endLayout.setReleaseLabel("释放加载更多");
@@ -130,14 +138,15 @@ public class AllSecretFragment extends BaseFragment {
         endLayout.setTextTypeface(typeface);
         startLayout.setLoadingDrawable(getResources().getDrawable(R.drawable.ic_wb_sunny_black_24dp));
         endLayout.setLoadingDrawable(getResources().getDrawable(R.drawable.ic_wb_sunny_black_24dp));
-        endLayout.setLastUpdatedLabel(StringUtils.getTime(System.currentTimeMillis()).substring(11,19));
+        endLayout.setLastUpdatedLabel(StringUtils.getTime(System.currentTimeMillis()).substring(11, 16));
         plv.setOnRefreshListener(new PullToRefreshBase.OnRefreshListener2<ListView>() {
 
             @Override
             public void onPullDownToRefresh(PullToRefreshBase<ListView> refreshView) {
                 count = 1;
                 BmobQuery<Secret> query = new BmobQuery<Secret>();
-                query.setLimit(10);
+                query.setLimit(20);
+                query.include("author");
                 query.order("-createdAt");
                 query.findObjects(new FindListener<Secret>() {
 
@@ -147,14 +156,14 @@ public class AllSecretFragment extends BaseFragment {
                             if (list == null || list.equals("")) {
                                 return;
                             }
-                            secrets = list;
+                            MyApplication.getAppInstance().addContactsFromSecrets(list);
                             plv.setAdapter(adapter);
                             plv.onRefreshComplete();
                         } else {
                             //停止刷新动画
                             plv.onRefreshComplete();
-                            Log.e("duke",e.toString());
-                            toast("刷新失败");
+                            Log.e("duke", e.toString());
+                            toast("刷新失败"+e);
                         }
                     }
                 });
@@ -164,6 +173,7 @@ public class AllSecretFragment extends BaseFragment {
             public void onPullUpToRefresh(PullToRefreshBase<ListView> refreshView) {
                 BmobQuery<Secret> query = new BmobQuery<Secret>();
                 query.setLimit(10 + 5 * count);
+                query.include("author");
                 query.order("-createdAt");
                 count++;
                 query.findObjects(new FindListener<Secret>() {
@@ -179,11 +189,13 @@ public class AllSecretFragment extends BaseFragment {
                                     secrets.add(list.get(list.size() - i));
                                 }
                             }
+                            MyApplication.getAppInstance().addContactsFromSecrets(list);
                             adapter.notifyDataSetChanged();
                             plv.onRefreshComplete();
                         } else {
                             plv.onRefreshComplete();
-                            toast("加载失败");
+                            toast("加载失败"+e);
+                            Log.i("duke",e.toString());
                         }
                     }
                 });
@@ -195,7 +207,6 @@ public class AllSecretFragment extends BaseFragment {
     @Override
     public void onResume() {
         super.onResume();
-        plv.setRefreshing();
     }
 
     public static final int mTouchSlop = 10;
@@ -219,12 +230,14 @@ public class AllSecretFragment extends BaseFragment {
                     }
                     if (direction == 1) {
                         if (mShow) {
-                            act.hideAnim(1);
+                            act.hideToolbarAndFb(1);
+                            act.hideBottomBar(1);
                             mShow = !mShow;
                         }
                     } else if (direction == 0) {
                         if (!mShow) {
-                            act.hideAnim(0);
+                            act.hideToolbarAndFb(0);
+                            act.hideBottomBar(0);
                             mShow = !mShow;
                         }
                     }

@@ -10,7 +10,6 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/Secret" />
-            <option value="$PROJECT_DIR$/easeui" />
             <option value="$PROJECT_DIR$/pulltorefresh" />
           </set>
         </option>

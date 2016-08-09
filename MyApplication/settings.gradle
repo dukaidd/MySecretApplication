@@ -1,1 +1,1 @@
-include ':Secret', 'pulltorefresh', ':easeui'
+include ':Secret', 'pulltorefresh'
