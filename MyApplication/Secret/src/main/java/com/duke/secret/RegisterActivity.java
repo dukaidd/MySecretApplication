@@ -7,9 +7,9 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioGroup;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.duke.base.BaseActivity;
@@ -28,7 +28,7 @@ public class RegisterActivity extends BaseActivity implements View.OnFocusChange
 
     private EditText username, password, repassword, email;
     private RadioGroup sex;
-    private TextView tv;
+    private Button button;
     private String sex_content = "男";
     public static final int RESULT_CODE = 2;
     private Handler hander = new Handler() {
@@ -51,7 +51,7 @@ public class RegisterActivity extends BaseActivity implements View.OnFocusChange
 
     private void initView() {
         getWindow().setStatusBarColor(Color.parseColor("#C43828"));
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_home);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_register);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
@@ -60,8 +60,8 @@ public class RegisterActivity extends BaseActivity implements View.OnFocusChange
                 RegisterActivity.this.finish();
             }
         });
-        tv = (TextView) findViewById(R.id.register_tv);
-        tv.setOnClickListener(this);
+        button = (Button) findViewById(R.id.register_btn);
+        button.setOnClickListener(this);
         username = (EditText) findViewById(R.id.register_username);
         username.setOnFocusChangeListener(this);
         password = (EditText) findViewById(R.id.register_password);
@@ -106,7 +106,7 @@ public class RegisterActivity extends BaseActivity implements View.OnFocusChange
         }
     }
 
-    private void register(View view) {
+    private void register() {
         final String username_content = username.getText().toString().trim();
         final String password_content = password.getText().toString().trim();
         String email_content = email.getText().toString().trim();
@@ -181,8 +181,8 @@ public class RegisterActivity extends BaseActivity implements View.OnFocusChange
 
     @Override
     public void onClick(View v) {
-        if (v.getId() == R.id.register_tv) {
-            register(v);
+        if (v.getId() == R.id.register_btn) {
+            register();
         }
     }
 }

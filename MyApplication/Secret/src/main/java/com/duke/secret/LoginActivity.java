@@ -1,11 +1,10 @@
 package com.duke.secret;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.annotation.TargetApi;
+import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -15,25 +14,15 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.duke.base.BaseActivity;
 import com.duke.beans.User;
 import com.easemob.EMCallBack;
 import com.easemob.chat.EMChatManager;
 import com.easemob.chat.EMGroupManager;
-import com.easemob.easeui.domain.EaseUser;
 
-import java.util.List;
-
-import cn.bmob.v3.BmobQuery;
-import cn.bmob.v3.BmobUser;
 import cn.bmob.v3.exception.BmobException;
-import cn.bmob.v3.listener.FindListener;
 import cn.bmob.v3.listener.SaveListener;
-import cn.bmob.v3.listener.UpdateListener;
-
-import static com.easemob.easeui.utils.EaseCommonUtils.setUserInitialLetter;
 
 /**
  * A login screen that offers login via email/password.
@@ -50,7 +39,6 @@ public class LoginActivity extends BaseActivity {
 
     // UI references.
     private EditText mUsernameView, mPasswordView;
-    private View mProgressView;
     private View mLoginFormView;
 
     @Override
@@ -58,8 +46,8 @@ public class LoginActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         // Set up the login form.
+        getSharedPreferences("times", Context.MODE_PRIVATE).edit().putBoolean("isFirst", false).apply();
         mUsernameView = (EditText) findViewById(R.id.login_username);
-
         mPasswordView = (EditText) findViewById(R.id.login_password);
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
@@ -88,8 +76,8 @@ public class LoginActivity extends BaseActivity {
         });
 
         mLoginFormView = findViewById(R.id.login_form);
-        mProgressView = findViewById(R.id.login_progress);
     }
+
     /**
      * Attempts to sign in or register the account specified by the login form.
      * If there are form errors (invalid email, missing fields, etc.), the
@@ -129,7 +117,6 @@ public class LoginActivity extends BaseActivity {
         } else {
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
-            showProgress(true);
 
             User user = new User();
             user.setUsername(username);
@@ -137,19 +124,19 @@ public class LoginActivity extends BaseActivity {
             user.login(new SaveListener<User>() {
 
                 @Override
-                public void done(User user, BmobException e) {
+                public void done(User user, final BmobException e) {
                     if (e == null) {
                         EMChatManager.getInstance().login(username, password, new EMCallBack() {// 回调
                             @Override
                             public void onSuccess() {
                                 runOnUiThread(new Runnable() {
                                     public void run() {
-                                        showProgress(false);
                                         EMGroupManager.getInstance().loadAllGroups();
                                         EMChatManager.getInstance().loadAllConversations();
                                         Log.d("main", "登陆聊天服务器成功！");
                                         toast("登录成功");
                                         startActivity(new Intent(LoginActivity.this, HomeActivity.class));
+//                                        showProgress(false);
                                         LoginActivity.this.finish();
                                     }
                                 });
@@ -161,18 +148,26 @@ public class LoginActivity extends BaseActivity {
                             }
 
                             @Override
-                            public void onError(int code, String message) {
-                                Log.d("main", "登陆聊天服务器失败！");
-                                mPasswordView.setError("登录失败:" + message);
-                                mPasswordView.requestFocus();
-                                showProgress(false);
+                            public void onError(int code, final String message) {
+                                Log.d("duke", "登陆聊天服务器失败！");
+                                runOnUiThread(new Runnable() {
+                                    public void run() {
+                                        mPasswordView.setError("登录失败:" + message);
+                                        mPasswordView.requestFocus();
+                                    }
+                                });
+
                             }
                         });
 
                     } else {
-                        mPasswordView.setError("登录失败:" + e);
-                        mPasswordView.requestFocus();
-                        showProgress(false);
+                        Log.d("duke", "登陆BMOB服务器失败！");
+                        runOnUiThread(new Runnable() {
+                            public void run() {
+                                mPasswordView.setError("登录失败:" + e);
+                                mPasswordView.requestFocus();
+                            }
+                        });
                     }
                 }
             });
@@ -181,42 +176,6 @@ public class LoginActivity extends BaseActivity {
         }
     }
 
-
-    /**
-     * Shows the progress UI and hides the login form.
-     */
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
-    private void showProgress(final boolean show) {
-        // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
-        // for very easy animations. If available, use these APIs to fade-in
-        // the progress spinner.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
-            int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
-
-            mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-            mLoginFormView.animate().setDuration(shortAnimTime).alpha(
-                    show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-                }
-            });
-
-            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            mProgressView.animate().setDuration(shortAnimTime).alpha(
-                    show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-                }
-            });
-        } else {
-            // The ViewPropertyAnimator APIs are not available, so simply show
-            // and hide the relevant UI components.
-            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-        }
-    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {

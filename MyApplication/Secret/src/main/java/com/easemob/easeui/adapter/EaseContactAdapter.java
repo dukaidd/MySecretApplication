@@ -90,18 +90,18 @@ public class EaseContactAdapter extends ArrayAdapter<EaseUser> implements Sectio
         /**
          * 设置自定义 ImageView 的属性
          */
-        if (avatarShape != -1) {
-            holder.avatar.setShapeType(avatarShape);
-        }
-        if (borderColor != -1) {
-            holder.avatar.setBorderColor(borderColor);
-        }
-        if (borderWidth != -1) {
-            holder.avatar.setBorderWidth(borderWidth);
-        }
-        if (avatarRadius != -1) {
-            holder.avatar.setRadius(avatarRadius);
-        }
+//        if (avatarShape != -1) {
+//            holder.avatar.setShapeType(avatarShape);
+//        }
+//        if (borderColor != -1) {
+//            holder.avatar.setBorderColor(borderColor);
+//        }
+//        if (borderWidth != -1) {
+//            holder.avatar.setBorderWidth(borderWidth);
+//        }
+//        if (avatarRadius != -1) {
+//            holder.avatar.setRadius(avatarRadius);
+//        }
 
         EaseUser user = getItem(position);
         if (user == null)
@@ -236,8 +236,8 @@ public class EaseContactAdapter extends ArrayAdapter<EaseUser> implements Sectio
             if (mOriginalList == null) {
                 mOriginalList = new ArrayList<EaseUser>();
             }
-            EMLog.d(TAG, "contacts original size: " + mOriginalList.size());
-            EMLog.d(TAG, "contacts copy size: " + copyUserList.size());
+            EMLog.d(TAG, "allUsers original size: " + mOriginalList.size());
+            EMLog.d(TAG, "allUsers copy size: " + copyUserList.size());
 
             if (prefix == null || prefix.length() == 0) {
                 results.values = copyUserList;
@@ -271,7 +271,7 @@ public class EaseContactAdapter extends ArrayAdapter<EaseUser> implements Sectio
                 results.values = newValues;
                 results.count = newValues.size();
             }
-            EMLog.d(TAG, "contacts filter results size: " + results.count);
+            EMLog.d(TAG, "allUsers filter results size: " + results.count);
             return results;
         }
 
@@ -279,7 +279,7 @@ public class EaseContactAdapter extends ArrayAdapter<EaseUser> implements Sectio
         protected synchronized void publishResults(CharSequence constraint, FilterResults results) {
             userList.clear();
             userList.addAll((List<EaseUser>) results.values);
-            EMLog.d(TAG, "publish contacts filter results size: " + results.count);
+            EMLog.d(TAG, "publish allUsers filter results size: " + results.count);
             if (results.count > 0) {
                 notiyfyByFilter = true;
                 notifyDataSetChanged();

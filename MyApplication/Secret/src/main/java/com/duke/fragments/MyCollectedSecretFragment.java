@@ -13,6 +13,7 @@ import android.widget.AbsListView;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.duke.adapters.APlvAdapter;
 import com.duke.adapters.MCSFAdapter;
 import com.duke.base.BaseFragment;
 import com.duke.beans.Secret;
@@ -33,11 +34,11 @@ public class MyCollectedSecretFragment extends BaseFragment {
     private HomeActivity act;
     private List<Secret> secrets;
     private ListView collections;
-    private MCSFAdapter adapter;
+    private APlvAdapter adapter;
     private ProgressDialog pd;
     private Handler handler = new Handler() {
         public void handleMessage(android.os.Message msg) {
-            adapter = new MCSFAdapter(secrets, act);
+            adapter = new APlvAdapter(act,secrets);
             collections.setAdapter(adapter);
             pd.dismiss();
         }

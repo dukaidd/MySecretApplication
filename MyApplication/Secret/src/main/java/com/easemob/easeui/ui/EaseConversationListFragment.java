@@ -280,6 +280,11 @@ public class EaseConversationListFragment extends EaseBaseFragment {
     }
 
     @Override
+    public void onPause() {
+        super.onPause();
+    }
+
+    @Override
     public void onDestroy() {
         super.onDestroy();
         EMChatManager.getInstance().removeConnectionListener(connectionListener);

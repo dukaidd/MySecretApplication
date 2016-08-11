@@ -87,13 +87,12 @@ import cn.bmob.v3.listener.SaveListener;
 import cn.bmob.v3.listener.UpdateListener;
 import cn.bmob.v3.listener.UploadBatchListener;
 
-import static com.duke.app.MyApplication.getAppInstance;
-
 
 public class HomeActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
     private final int SDK_PERMISSION_REQUEST = 127;
     public static final int REQUEST_CODE = 0;
+    private static HomeActivity instance;
     private String permissionInfo;
     private FloatingActionButton fab;
     public MySecretFragment msf;
@@ -120,10 +119,15 @@ public class HomeActivity extends BaseActivity
     private int currentTabIndex = 0;
     private LinearLayout ll_bottom;
 
+    public static HomeActivity getInstance() {
+        return instance;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
+        instance = this;
         getPersimmions();
         initView();
         initFragment();
@@ -133,7 +137,6 @@ public class HomeActivity extends BaseActivity
         intentFilter.setPriority(3);
         registerReceiver(msgReceiver, intentFilter);
         EMChat.getInstance().setAppInited();
-
     }
 
     private void initView() {
@@ -176,6 +179,118 @@ public class HomeActivity extends BaseActivity
         nav_email.setText(user.getEmail().toString());
 
         unreadLabel = (TextView) findViewById(R.id.unread_msg_number);
+    }
+
+    private void initFragment() {
+        af = new AllSecretFragment();
+        msf = new MySecretFragment();
+        mspf = new MySecretPathFragment();
+        mcsf = new MyCollectedSecretFragment();
+
+        mTabs = new Button[4];
+        mTabs[0] = (Button) findViewById(R.id.btn_discovery);
+        mTabs[1] = (Button) findViewById(R.id.btn_conversation);
+        mTabs[2] = (Button) findViewById(R.id.btn_address_list);
+        mTabs[3] = (Button) findViewById(R.id.btn_setting);
+        // set first tab as selected
+        mTabs[0].setSelected(true);
+
+        conversationListFragment = new EaseConversationListFragment();
+
+        contactListFragment = new EaseContactListFragment();
+        settingFragment = new SettingsFragment();
+        initContactList();
+        conversationListFragment.setConversationListItemClickListener(new EaseConversationListFragment.EaseConversationListItemClickListener() {
+
+            @Override
+            public void onListItemClicked(EMConversation conversation) {
+                startActivity(new Intent(HomeActivity.this, ChatActivity.class).putExtra(EaseConstant.EXTRA_USER_ID, conversation.getUserName()));
+            }
+        });
+        contactListFragment.setContactListItemClickListener(new EaseContactListFragment.EaseContactListItemClickListener() {
+
+            @Override
+            public void onListItemClicked(EaseUser user) {
+                startActivity(new Intent(HomeActivity.this, ChatActivity.class).putExtra(EaseConstant.EXTRA_USER_ID, user.getUsername()));
+            }
+        });
+        fragments = new Fragment[]{af, conversationListFragment, contactListFragment, settingFragment, msf, mspf, mcsf};
+        getSupportFragmentManager().beginTransaction().add(R.id.fragment_container, af).
+                add(R.id.fragment_container, contactListFragment).hide(contactListFragment).show(af)
+                .commit();
+    }
+
+    private void initContactList() {
+        //--------------获得联系人方法开始-------------------------------------------------------
+        final Map<String, EaseUser> contacts = new HashMap<>();
+        BmobQuery<User> query = new BmobQuery<User>();
+        query.setLimit(100);
+        User user = BmobUser.getCurrentUser(User.class);
+        query.addWhereRelatedTo("friends_relation", new BmobPointer(user));
+        query.findObjects(new FindListener<User>() {
+
+            @Override
+            public void done(List<User> list, BmobException e) {
+                if (e == null) {
+                    if (list == null || list.equals("")) {
+                        return;
+                    }
+//                    Log.i("duke", "list大小：" + list.size());
+                    for (final User user : list) {
+//                        Log.i("duke", user.getUsername());
+                        final EaseUser easeUser = new EaseUser(user.getUsername());
+                        if (user.getAvatarUrl() != null) {
+                            easeUser.setAvatar(user.getAvatarUrl());
+                        } else {
+                            BmobQuery<Avatar> query = new BmobQuery<Avatar>();
+                            query.order("-createdAt");
+                            query.addWhereEqualTo("user", user);
+                            query.findObjects(new FindListener<Avatar>() {
+                                @Override
+                                public void done(List<Avatar> list, BmobException e) {
+                                    if (e == null) {
+                                        if (list == null || list.equals("")) {
+                                            return;
+                                        }
+                                        user.setAvatarUrl(list.get(0).getAvatar().getUrl());
+                                        user.update(new UpdateListener() {
+                                            @Override
+                                            public void done(BmobException e) {
+                                                if (e == null) {
+                                                    Log.i("duke", "user表设置头像URL成功");
+                                                }
+                                            }
+                                        });
+                                        if (list.get(0) != null && list.get(0).getAvatar() != null) {
+                                            easeUser.setAvatar(list.get(0).getAvatar().getUrl());
+                                        }
+                                    }
+
+                                }
+                            });
+                        }
+                        if (user.getNick() != null) {
+                            easeUser.setNick(user.getNick());
+                        }
+                        EaseCommonUtils.setUserInitialLetter(easeUser);
+                        if (MyApplication.allUsers == null) {
+                            MyApplication.allUsers = new HashMap<String, EaseUser>();
+                        }
+                        MyApplication.allUsers.put(user.getUsername(), easeUser);
+                        contacts.put(user.getUsername(), easeUser);
+                    }
+                } else {
+                    Log.e("duke", "获取联系人失败" + e);
+                }
+            }
+        });
+        MyApplication.getInstance().setContactList(contacts);
+        contactListFragment.setContactsMap(MyApplication.getInstance().getContactList());
+        //--------------获得联系人方法结束-------------------------------------------------------
+    }
+
+    public void refreshContactList() {
+        contactListFragment.refresh();
     }
 
     private void setAvatarAndBG(Bitmap bitmap) {
@@ -240,26 +355,31 @@ public class HomeActivity extends BaseActivity
                     });
                 }
             }.execute();
-        }else{
+        } else {
             BmobQuery<Avatar> query = new BmobQuery<Avatar>();
             query.addWhereEqualTo("user", user);
+            query.order("-createdAt");
             query.findObjects(new FindListener<Avatar>() {
                 @Override
                 public void done(List<Avatar> list, BmobException e) {
                     if (e == null) {
                         if (list == null || list.equals("")) {
-                            toast("null");
+                            if (user.getSex() == "男") {
+                                nav_avatar.setImageResource(R.drawable.ic_default_male);
+                            } else {
+                                nav_avatar.setImageResource(R.drawable.ic_default_female);
+                            }
                             return;
                         }
-                        if(list.get(0)!=null&&list.get(0).getAvatar()!=null){
+                        if (list.get(0) != null && list.get(0).getAvatar() != null) {
 
                             setAvatarAndBG(list.get(0).getAvatar().getUrl());
                             user.setAvatarUrl(list.get(0).getAvatar().getUrl());
                             user.update(new UpdateListener() {
                                 @Override
                                 public void done(BmobException e) {
-                                    if(e==null){
-                                        Log.i("duke","user表设置头像URL成功");
+                                    if (e == null) {
+                                        Log.i("duke", "user表设置头像URL成功");
                                     }
                                 }
                             });
@@ -315,45 +435,6 @@ public class HomeActivity extends BaseActivity
                 }
             }.execute();
         }
-    }
-
-    private void initFragment() {
-        af = new AllSecretFragment();
-        msf = new MySecretFragment();
-        mspf = new MySecretPathFragment();
-        mcsf = new MyCollectedSecretFragment();
-
-        mTabs = new Button[4];
-        mTabs[0] = (Button) findViewById(R.id.btn_discovery);
-        mTabs[1] = (Button) findViewById(R.id.btn_conversation);
-        mTabs[2] = (Button) findViewById(R.id.btn_address_list);
-        mTabs[3] = (Button) findViewById(R.id.btn_setting);
-        // set first tab as selected
-        mTabs[0].setSelected(true);
-
-        conversationListFragment = new EaseConversationListFragment();
-
-        contactListFragment = new EaseContactListFragment();
-        settingFragment = new SettingsFragment();
-        contactListFragment.setContactsMap(getContacts());
-        conversationListFragment.setConversationListItemClickListener(new EaseConversationListFragment.EaseConversationListItemClickListener() {
-
-            @Override
-            public void onListItemClicked(EMConversation conversation) {
-                startActivity(new Intent(HomeActivity.this, ChatActivity.class).putExtra(EaseConstant.EXTRA_USER_ID, conversation.getUserName()));
-            }
-        });
-        contactListFragment.setContactListItemClickListener(new EaseContactListFragment.EaseContactListItemClickListener() {
-
-            @Override
-            public void onListItemClicked(EaseUser user) {
-                startActivity(new Intent(HomeActivity.this, ChatActivity.class).putExtra(EaseConstant.EXTRA_USER_ID, user.getUsername()));
-            }
-        });
-        fragments = new Fragment[]{af, conversationListFragment, contactListFragment, settingFragment, msf, mspf, mcsf};
-        getSupportFragmentManager().beginTransaction().add(R.id.fragment_container, af).
-                add(R.id.fragment_container, contactListFragment).hide(contactListFragment).show(af)
-                .commit();
     }
 
     private long current;
@@ -423,7 +504,7 @@ public class HomeActivity extends BaseActivity
             startActivity(new Intent(HomeActivity.this, LoginActivity.class));
             BmobUser.logOut();
             EMChatManager.getInstance().logout();
-            getAppInstance().contacts = null;
+            MyApplication.getInstance().setContactList(null);
             HomeActivity.this.finish();
         }
 
@@ -499,13 +580,15 @@ public class HomeActivity extends BaseActivity
             Log.d("duke", "new message id:" + msgId + " from:" + msgFrom + " type:" + msgType);
             // 更方便的方法是通过msgId直接获取整个message
             EMMessage message = EMChatManager.getInstance().getMessage(msgId);
-            if (!MyApplication.appInstance.isOpen()) {
+            if (!MyApplication.getInstance().isOpen()) {
                 NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
                 //API level 11
                 Notification.Builder builder = new Notification.Builder(context);
                 builder.setContentTitle(message.getFrom());
-                builder.setContentText(((TextMessageBody) message.getBody()).getMessage());
-                builder.setSmallIcon(R.drawable.flower);
+                if (message.getType() == EMMessage.Type.TXT) {
+                    builder.setContentText(((TextMessageBody) message.getBody()).getMessage());
+                }
+                builder.setSmallIcon(R.drawable.ic_forum_black_24dp);
                 builder.setAutoCancel(true);
                 builder.setWhen(System.currentTimeMillis());
 
@@ -520,11 +603,12 @@ public class HomeActivity extends BaseActivity
                 notification.flags = Notification.FLAG_AUTO_CANCEL;
                 notification.defaults = Notification.DEFAULT_ALL;
 
-                manager.notify(R.drawable.flower, notification);
+                manager.notify(R.drawable.ic_forum_black_24dp, notification);
             }
         }
     }
-    //-------获取运行时权限-----------------------------------------------------------------
+
+    //-------获取运行时权限开始-----------------------------------------------------------------
     @TargetApi(23)
     private void getPersimmions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -588,11 +672,16 @@ public class HomeActivity extends BaseActivity
     @TargetApi(23)
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+
         // TODO Auto-generated method stub
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
     }
-    //-------------------------------------------------------------------------------------------------
+
+    //-------获取运行时权限结束-----------------------------------------------------------------
+
+    //--------------设置头像方法开始-----------------------------------------------------------------------------------
+
     private void createDialog() {
         AlertDialog.Builder dialog = new AlertDialog.Builder(this);
         dialog.setTitle("选择方式");
@@ -632,9 +721,9 @@ public class HomeActivity extends BaseActivity
                 Uri uri = data.getData();
                 if (uri == null && data.hasExtra("data")) {
                     mbit = (Bitmap) data.getExtras().get("data");
+                    saveBitmap(mbit);
                     mbit = compressImage(mbit);
                     setAvatarAndBG(mbit);
-                    saveBitmap(mbit);
                 } else {
                     try {
                         mbit = MediaStore.Images.Media.getBitmap(HomeActivity.this.getContentResolver(), uri);
@@ -656,7 +745,7 @@ public class HomeActivity extends BaseActivity
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         image.compress(Bitmap.CompressFormat.JPEG, 100, baos);//质量压缩方法，这里100表示不压缩，把压缩后的数据存放到baos中
         int options = 100;
-        while (baos.toByteArray().length / 1024 > 4) {  //循环判断如果压缩后图片是否大于100kb,大于继续压缩
+        while (baos.toByteArray().length / 1024 > 20) {  //循环判断如果压缩后图片是否大于100kb,大于继续压缩
             baos.reset();//重置baos即清空baos
             image.compress(Bitmap.CompressFormat.JPEG, options, baos);//这里压缩options%，把压缩后的数据存放到baos中
             options -= 10;//每次都减少10
@@ -667,25 +756,25 @@ public class HomeActivity extends BaseActivity
     }
 
     public void saveBitmap(Bitmap bitmap) {
-        File dir = new File("/mnt/sdcard/secret/avatar");
+        File dir = new File("/mnt/sdcard/youhu/avatar");
         if (!dir.exists()) {
             dir.mkdirs();
         }
         FileOutputStream fos = null;
         try {
-            fos = new FileOutputStream("/mnt/sdcard/secret/avatar/avatar.jpg");
+            fos = new FileOutputStream("/mnt/sdcard/youhu/avatar/avatar.jpg");
         } catch (FileNotFoundException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
         // Upload
-        String filePath = "/mnt/sdcard/secret/avatar/avatar.jpg";
+        String filePath = "/mnt/sdcard/youhu/avatar/avatar.jpg";
         BmobFile.uploadBatch(new String[]{filePath}, new UploadBatchListener() {
             @Override
             public void onSuccess(List<BmobFile> list, List<String> list1) {
 //                toast("上传成功");
-                User user = BmobUser.getCurrentUser(User.class);
+                final User user = BmobUser.getCurrentUser(User.class);
 
                 Avatar avatar = new Avatar();
                 avatar.setUsername(user.getUsername());
@@ -697,11 +786,38 @@ public class HomeActivity extends BaseActivity
                     public void done(Object o, BmobException e) {
                         if (e == null) {
                             toast("设置成功");
+                            Log.i("duke", o.toString());
+                            BmobQuery<Avatar> query = new BmobQuery<Avatar>();
+                            query.addWhereEqualTo("objectId", o);
+                            query.findObjects(new FindListener<Avatar>() {
+                                @Override
+                                public void done(List<Avatar> list, BmobException e) {
+                                    if (list == null || list.equals("")) {
+                                        return;
+                                    }
+                                    Log.i("duke", list.toString());
+                                    if (list.get(0) != null) {
+                                        user.setAvatarUrl(list.get(0).getAvatar().getUrl());
+                                        user.update(new UpdateListener() {
+                                            @Override
+                                            public void done(BmobException e) {
+                                                if (e == null) {
+                                                    Log.i("duke", "user表设置头像URL成功");
+                                                } else {
+                                                    Log.i("duke", "user表设置头像URL出错：" + e);
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
+                            });
+
                         } else {
                             toast("设置失败" + e);
                         }
                     }
                 });
+
             }
 
             @Override
@@ -714,6 +830,11 @@ public class HomeActivity extends BaseActivity
             }
         });
     }
+
+    //--------------设置头像方法结束------------------------------------------------------------------------------------
+
+
+    //--------------滑动隐藏/显示Toolbar动画开始------------------------------------------------------------------------------------
 
     public void hideToolbarAndFb(int flag) {
         if (Animator_toolbar != null && Animator_toolbar.isRunning()) {
@@ -737,6 +858,8 @@ public class HomeActivity extends BaseActivity
         }
         Animator_bottom.start();
     }
+
+    //--------------滑动隐藏/显示Toolbar动画结束------------------------------------------------------------------------------------
 
     @Override
     protected void onDestroy() {
@@ -789,63 +912,4 @@ public class HomeActivity extends BaseActivity
         currentTabIndex = index;
     }
 
-    private Map<String, EaseUser> getContacts() {
-        final Map<String, EaseUser> contacts = new HashMap<>();
-        BmobQuery<User> query = new BmobQuery<User>();
-        query.setLimit(100);
-        User user = BmobUser.getCurrentUser(User.class);
-        query.addWhereRelatedTo("friends_relation", new BmobPointer(user));
-        query.findObjects(new FindListener<User>() {
-
-            @Override
-            public void done(List<User> list, BmobException e) {
-                if (e == null) {
-                    if (list == null || list.equals("")) {
-                        toast("null");
-                        return;
-                    }
-//                    Log.i("duke", "list大小：" + list.size());
-                    for (User user : list) {
-//                        Log.i("duke", user.getUsername());
-                        final EaseUser easeUser = new EaseUser(user.getUsername());
-                        if (user.getAvatarUrl() != null) {
-                            easeUser.setAvatar(user.getAvatarUrl());
-                        } else {
-                            BmobQuery<Avatar> query = new BmobQuery<Avatar>();
-                            query.addWhereEqualTo("user", user);
-                            query.findObjects(new FindListener<Avatar>() {
-                                @Override
-                                public void done(List<Avatar> list, BmobException e) {
-                                    if (e == null) {
-                                        if (list == null || list.equals("")) {
-                                            toast("null");
-                                            return;
-                                        }
-                                        if(list.get(0)!=null&&list.get(0).getAvatar()!=null){
-                                            easeUser.setAvatar(list.get(0).getAvatar().getUrl());
-                                        }
-                                    }
-
-                                }
-                            });
-                        }
-                        if (user.getNick() != null) {
-                            easeUser.setNick(user.getNick());
-                        }
-                        EaseCommonUtils.setUserInitialLetter(easeUser);
-                        if (MyApplication.appInstance.contacts == null) {
-                            MyApplication.appInstance.contacts = new HashMap<String, EaseUser>();
-                        }
-
-                        getAppInstance().contacts.put(user.getUsername(), easeUser);
-                        contacts.put(user.getUsername(), easeUser);
-                    }
-                } else {
-                    toast("获取联系人失败" + e);
-                }
-            }
-
-        });
-        return contacts;
-    }
 }

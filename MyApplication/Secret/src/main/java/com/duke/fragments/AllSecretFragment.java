@@ -19,18 +19,15 @@ import com.duke.adapters.APlvAdapter;
 import com.duke.app.MyApplication;
 import com.duke.base.BaseFragment;
 import com.duke.beans.Secret;
-import com.duke.beans.User;
 import com.duke.secret.HomeActivity;
 import com.duke.secret.NewSecretActivity;
 import com.duke.secret.R;
 import com.duke.utils.StringUtils;
-import com.easemob.easeui.domain.EaseUser;
 import com.handmark.pulltorefresh.library.ILoadingLayout;
 import com.handmark.pulltorefresh.library.PullToRefreshBase;
 import com.handmark.pulltorefresh.library.PullToRefreshListView;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import cn.bmob.v3.BmobQuery;
@@ -59,6 +56,7 @@ public class AllSecretFragment extends BaseFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // TODO Auto-generated method stub
         pd = new ProgressDialog(act);
+        pd.setMessage("正在获取数据...");
         pd.show();
         return inflater.inflate(R.layout.fragment_allsecret, null);
     }
@@ -87,11 +85,11 @@ public class AllSecretFragment extends BaseFragment {
                     } else {
                         secrets = list;
                     }
-                    MyApplication.getAppInstance().addContactsFromSecrets(list);
+                    MyApplication.getInstance().addContactsFromSecrets(list);
                     adapter = new APlvAdapter(act, secrets);
                     plv.setAdapter(adapter);
                     if (secrets.size() == 0) {
-                        dialog("提示", "还没有秘密,前去创建", android.R.drawable.ic_dialog_alert, "创建", "取消",
+                        dialog("提示", "还没有知识,前去分享", android.R.drawable.ic_dialog_alert, "创建", "取消",
                                 new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
@@ -101,8 +99,8 @@ public class AllSecretFragment extends BaseFragment {
                     }
                 } else {
                     pd.dismiss();
-                    toast("获取秘密失败:" + e);
-                    Log.i("duke",e.toString());
+                    toast("获取知识失败:" + e);
+                    Log.i("duke", e.toString());
                 }
             }
         });
@@ -156,14 +154,16 @@ public class AllSecretFragment extends BaseFragment {
                             if (list == null || list.equals("")) {
                                 return;
                             }
-                            MyApplication.getAppInstance().addContactsFromSecrets(list);
+                            secrets = list;
+                            MyApplication.getInstance().addContactsFromSecrets(list);
+                            adapter = new APlvAdapter(act, secrets);
                             plv.setAdapter(adapter);
                             plv.onRefreshComplete();
                         } else {
                             //停止刷新动画
                             plv.onRefreshComplete();
                             Log.e("duke", e.toString());
-                            toast("刷新失败"+e);
+                            toast("刷新失败" + e);
                         }
                     }
                 });
@@ -189,24 +189,19 @@ public class AllSecretFragment extends BaseFragment {
                                     secrets.add(list.get(list.size() - i));
                                 }
                             }
-                            MyApplication.getAppInstance().addContactsFromSecrets(list);
+                            MyApplication.getInstance().addContactsFromSecrets(list);
                             adapter.notifyDataSetChanged();
                             plv.onRefreshComplete();
                         } else {
                             plv.onRefreshComplete();
-                            toast("加载失败"+e);
-                            Log.i("duke",e.toString());
+                            toast("加载失败" + e);
+                            Log.i("duke", e.toString());
                         }
                     }
                 });
             }
 
         });
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
     }
 
     public static final int mTouchSlop = 10;
@@ -253,5 +248,10 @@ public class AllSecretFragment extends BaseFragment {
         listView.smoothScrollToPosition(1);
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        hideSoftKeyboard();
+    }
 
 }

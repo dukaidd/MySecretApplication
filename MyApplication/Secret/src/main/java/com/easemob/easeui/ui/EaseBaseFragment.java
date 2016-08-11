@@ -65,5 +65,9 @@ public abstract class EaseBaseFragment extends Fragment {
      */
     protected abstract void setUpView();
 
-
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        hideSoftKeyboard();
+    }
 }

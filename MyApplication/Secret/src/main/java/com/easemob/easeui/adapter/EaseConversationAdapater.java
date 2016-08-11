@@ -168,18 +168,18 @@ public class EaseConversationAdapater extends ArrayAdapter<EMConversation> {
         /**
          * 设置自定义 ImageView 的属性
          */
-        if (avatarShape != -1) {
-            holder.avatar.setShapeType(avatarShape);
-        }
-        if (borderColor != -1) {
-            holder.avatar.setBorderColor(borderColor);
-        }
-        if (borderWidth != -1) {
-            holder.avatar.setBorderWidth(borderWidth);
-        }
-        if (avatarRadius != -1) {
-            holder.avatar.setRadius(avatarRadius);
-        }
+//        if (avatarShape != -1) {
+//            holder.avatar.setShapeType(avatarShape);
+//        }
+//        if (borderColor != -1) {
+//            holder.avatar.setBorderColor(borderColor);
+//        }
+//        if (borderWidth != -1) {
+//            holder.avatar.setBorderWidth(borderWidth);
+//        }
+//        if (avatarRadius != -1) {
+//            holder.avatar.setRadius(avatarRadius);
+//        }
         // 设置自定义属性
         holder.name.setTextColor(primaryColor);
         holder.message.setTextColor(secondaryColor);

@@ -110,8 +110,8 @@ public class MySecretPathFragment extends BaseFragment implements OnMarkerClickL
 		mBaiduMap.setOnMarkerClickListener(this);
 		pd = new ProgressDialog(act);
 		pd.show();
-		LatLng pos = new LatLng(MyApplication.appInstance.getLocations().get(0).getLatitude(),
-				MyApplication.appInstance.getLocations().get(0).getLongitude());
+		LatLng pos = new LatLng(MyApplication.getInstance().getLocations().get(0).getLatitude(),
+				MyApplication.getInstance().getLocations().get(0).getLongitude());
 
 		BitmapDescriptor ic = BitmapDescriptorFactory.fromResource(R.drawable.ov_dot_blue);
 		OverlayOptions options = new MarkerOptions().position(pos).icon(ic);

@@ -47,5 +47,4 @@ public class NSGvAdapter extends BaseAdapter {
 		view.setBackgroundColor(colors.get(position));
 		return convertView;
 	}
-
 }

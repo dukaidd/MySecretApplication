@@ -16,8 +16,11 @@ import com.baidu.mapapi.utils.DistanceUtil;
 import com.duke.app.MyApplication;
 import com.duke.beans.Secret;
 import com.duke.beans.User;
+import com.duke.customview.CircleImageView;
 import com.duke.secret.HomeActivity;
 import com.duke.secret.R;
+import com.duke.utils.StringUtils;
+import com.easemob.easeui.utils.EaseUserUtils;
 
 import java.util.List;
 
@@ -65,55 +68,50 @@ public class MPlvAdapter extends BaseAdapter implements OnClickListener {
             vh = new ViewHolder();
             vh.text = (TextView) convertView.findViewById(R.id.item_mplv_text);
             vh.time1 = (TextView) convertView.findViewById(R.id.item_mplv_time1);
-            vh.time2 = (TextView) convertView.findViewById(R.id.item_mplv_time2);
             vh.distance = (TextView) convertView.findViewById(R.id.item_mplv_distance);
             vh.weather = (TextView) convertView.findViewById(R.id.item_mplv_weather);
-            vh.sel = (Button) convertView.findViewById(R.id.item_mplv_delete);
-            vh.sel.setOnClickListener(this);
+            vh.delete = (Button) convertView.findViewById(R.id.item_mplv_delete);
+            vh.delete.setOnClickListener(this);
             vh.ll = (LinearLayout) convertView.findViewById(R.id.item_mplv_ll);
             vh.like = (Button) convertView.findViewById(R.id.item_mplv_like);
             vh.like.setOnClickListener(this);
             vh.likedNum = (TextView) convertView.findViewById(R.id.item_mplv_likednum);
+            vh.avatar = (CircleImageView) convertView.findViewById(R.id.item_mplv_avatar);
             convertView.setTag(vh);
         } else {
             vh = (ViewHolder) convertView.getTag();
         }
-        vh.text.setText(secrets.get(position).getText());
-        vh.text.setTextColor(secrets.get(position).getTextColor());
-        vh.ll.setBackgroundColor(secrets.get(position).getBgColor());
-        vh.time1.setText(secrets.get(position).getCreatedAt().split(" ")[0]);
-        vh.time1.setTextColor(secrets.get(position).getTextColor());
-        vh.time2.setText(secrets.get(position).getCreatedAt().split(" ")[1]);
-        vh.time2.setTextColor(secrets.get(position).getTextColor());
+        final Secret secret = secrets.get(position);
+        vh.text.setText(secret.getText());
+        vh.text.setTextColor(secret.getTextColor());
+        vh.ll.setBackgroundColor(secret.getBgColor());
+        vh.time1.setText(StringUtils.parseTime(secret.getCreatedAt()));
         vh.distance.setText(getDiatance(position));
-        vh.distance.setTextColor(secrets.get(position).getTextColor());
-        vh.weather.setText(secrets.get(position).getWeather());
-        vh.weather.setTextColor(secrets.get(position).getTextColor());
-
-        if (secrets.get(position).getCollectedUsers() != null
-                && secrets.get(position).getCollectedUsers().contains("|" + curent_user + "|")) {
+        vh.weather.setText(secret.getWeather());
+        EaseUserUtils.setUserAvatar(act, secret.getUsername(), vh.avatar);
+        if (secret.getCollectedUsers() != null
+                && secret.getCollectedUsers().contains("|" + curent_user + "|")) {
             vh.like.setBackgroundResource(R.drawable.love_p);
         } else {
             vh.like.setBackgroundResource(R.drawable.love_n);
         }
-        vh.like.setTag(secrets.get(position));
-        vh.sel.setTag(secrets.get(position));
-        vh.likedNum.setText(secrets.get(position).getCollectedNum() + "");
-        vh.likedNum.setTextColor(secrets.get(position).getTextColor());
+        vh.like.setTag(secret);
+        vh.delete.setTag(secret);
+        vh.likedNum.setText(secret.getCollectedNum() + "");
 
         Typeface typeface = Typeface.createFromAsset(act.getAssets(), "fonts/mi.ttf");
         vh.text.setTypeface(typeface);
         vh.time1.setTypeface(typeface);
-        vh.time2.setTypeface(typeface);
         vh.distance.setTypeface(typeface);
         vh.weather.setTypeface(typeface);
         vh.likedNum.setTypeface(typeface);
+
         return convertView;
     }
 
     private CharSequence getDiatance(int position) {
-        if (MyApplication.appInstance.getLocations() != null && MyApplication.appInstance.getLocations().size()!=0) {
-            BDLocation location = MyApplication.appInstance.getLocations().get(0);
+        if (MyApplication.getInstance().getLocations() != null && MyApplication.getInstance().getLocations().size()!=0) {
+            BDLocation location = MyApplication.getInstance().getLocations().get(0);
             LatLng browsedIn = new LatLng(location.getLatitude(), location.getLongitude());
             LatLng createdIn = secrets.get(position).getLocation();
             long distanceMeters = (long) DistanceUtil.getDistance(browsedIn, createdIn);
@@ -128,10 +126,11 @@ public class MPlvAdapter extends BaseAdapter implements OnClickListener {
     }
 
     static class ViewHolder {
-        private TextView text, time1, time2, distance, weather, likedNum;
-        private Button sel;
+        private TextView text, time1, distance, weather, likedNum;
+        private Button delete;
         private Button like;
         private LinearLayout ll;
+        private CircleImageView avatar;
     }
 
     @Override
@@ -152,7 +151,7 @@ public class MPlvAdapter extends BaseAdapter implements OnClickListener {
 
                 });
                 break;
-            case R.id.item_aplv_like:
+            case R.id.item_mplv_like:
                 LinearLayout linearLayout = (LinearLayout) v.getParent();
                 TextView collectedNum = (TextView) linearLayout.getChildAt(3);
                 secret = (Secret) v.getTag();

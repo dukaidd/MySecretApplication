@@ -43,7 +43,7 @@ import java.util.Locale;
  */
 public class EaseNotifier {
     protected final static String[] msg_eng = {"sent a message", "sent a picture", "sent a voice",
-            "sent location message", "sent a video", "sent a file", "%1 contacts sent %2 messages"
+            "sent location message", "sent a video", "sent a file", "%1 allUsers sent %2 messages"
     };
     protected final static String[] msg_ch = {"发来一条消息", "发来一张图片", "发来一段语音", "发来位置信息", "发来一个视频", "发来一个文件",
             "%1个联系人发来%2条消息"
@@ -127,7 +127,7 @@ public class EaseNotifier {
 
         // 判断app是否在后台
         if (!EasyUtils.isAppRunningForeground(appContext)) {
-            EMLog.d(TAG, "appInstance is running in backgroud");
+            EMLog.d(TAG, "instance is running in backgroud");
             sendNotification(message, false);
         } else {
             sendNotification(message, true);
@@ -147,7 +147,7 @@ public class EaseNotifier {
         }
         // 判断app是否在后台
         if (!EasyUtils.isAppRunningForeground(appContext)) {
-            EMLog.d(TAG, "appInstance is running in backgroud");
+            EMLog.d(TAG, "instance is running in backgroud");
             sendNotification(messages, false);
         } else {
             sendNotification(messages, true);

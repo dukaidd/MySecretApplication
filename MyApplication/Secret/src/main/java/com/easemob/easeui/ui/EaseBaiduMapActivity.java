@@ -20,7 +20,9 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -47,9 +49,10 @@ import com.baidu.mapapi.map.MyLocationConfiguration.LocationMode;
 import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.model.LatLng;
 import com.baidu.mapapi.utils.CoordinateConverter;
+import com.duke.base.BaseActivity;
 import com.duke.secret.R;
 
-public class EaseBaiduMapActivity extends EaseBaseActivity {
+public class EaseBaiduMapActivity extends BaseActivity {
 
     private final static String TAG = "map";
     public static EaseBaiduMapActivity instance = null;
@@ -73,11 +76,21 @@ public class EaseBaiduMapActivity extends EaseBaseActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.ease_activity_baidumap);
+        getWindow().setStatusBarColor(Color.parseColor("#C43828"));
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_baidumap);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onBackPressed();
+            }
+        });
         instance = this;
         //在使用SDK各组件之前初始化context信息，传入ApplicationContext
         //注意该方法要再setContentView方法之前实现
 //        SDKInitializer.initialize(getApplicationContext());
-        setContentView(R.layout.ease_activity_baidumap);
         mMapView = (MapView) findViewById(R.id.bmapView);
         sendButton = (Button) findViewById(R.id.btn_location_send);
         Intent intent = getIntent();

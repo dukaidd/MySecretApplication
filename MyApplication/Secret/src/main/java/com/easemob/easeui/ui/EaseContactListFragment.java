@@ -132,7 +132,6 @@ public class EaseContactListFragment extends EaseBaseFragment {
             hight = TypedValue.complexToDimensionPixelSize(tv.data, getActivity().getResources().getDisplayMetrics());
         }
         header.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.MATCH_PARENT, hight));
-        header.setBackgroundResource(R.drawable.flag);
         linearLayout.addView(header, 0);
     }
 
@@ -272,7 +271,7 @@ public class EaseContactListFragment extends EaseBaseFragment {
         contactList.clear();
         synchronized (contactList) {
             //获取联系人列表
-            if (contactsMap == null) {
+            if (contactsMap == null || contactsMap.equals("")) {
                 return;
             }
             Iterator<Entry<String, EaseUser>> iterator = contactsMap.entrySet().iterator();

@@ -20,5 +20,9 @@ public class StringUtils {
 		SimpleDateFormat sdf2 = new SimpleDateFormat("M月d日");
 		return sdf2.format(date);
 	}
+	public  static  String getMonthAndDay(Long time){
+		SimpleDateFormat sdf2 = new SimpleDateFormat("M月d日");
+		return  sdf2.format(new Date(time));
+	}
 
 }

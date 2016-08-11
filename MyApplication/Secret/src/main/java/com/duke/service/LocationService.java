@@ -36,10 +36,10 @@ public class LocationService extends Service {
 			@Override
 			public void onReceiveLocation(BDLocation arg0) {
 				// TODO Auto-generated method stub
-				if (MyApplication.appInstance.getLocations().size() > 5) {
-					MyApplication.appInstance.getLocations().clear();
+				if (MyApplication.getInstance().getLocations().size() > 5) {
+					MyApplication.getInstance().getLocations().clear();
 				}
-				MyApplication.appInstance.getLocations().add(arg0);
+				MyApplication.getInstance().getLocations().add(arg0);
 			}
 		});
 		super.onCreate();

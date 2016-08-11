@@ -157,11 +157,6 @@ public class EaseChatFragment extends EaseBaseFragment implements EMEventListene
             @Override
             public boolean onPressToSpeakBtnTouch(View v, MotionEvent event) {
 
-
-
-
-
-
                 return voiceRecorderView.onPressToSpeakBtnTouch(v, event, new EaseVoiceRecorderCallback() {
 
                     @Override
@@ -980,9 +975,9 @@ public class EaseChatFragment extends EaseBaseFragment implements EMEventListene
                 case ITEM_PICTURE:
                     selectPicFromLocal(); // 图库选择图片
                     break;
-//            case ITEM_LOCATION: // 位置
-//                startActivityForResult(new Intent(getActivity(), EaseBaiduMapActivity.class), REQUEST_CODE_MAP);
-//                break;
+            case ITEM_LOCATION: // 位置
+                startActivityForResult(new Intent(getActivity(), EaseBaiduMapActivity.class), REQUEST_CODE_MAP);
+                break;
 
                 default:
                     break;

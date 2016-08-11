@@ -24,7 +24,7 @@ public final class EaseUI {
     private static final String TAG = EaseUI.class.getSimpleName();
 
     /**
-     * the global EaseUI appInstance
+     * the global EaseUI instance
      */
     private static EaseUI instance = null;
 
@@ -102,7 +102,7 @@ public final class EaseUI {
         int pid = android.os.Process.myPid();
         String processAppName = getAppName(pid);
 
-        Log.d(TAG, "process appInstance name : " + processAppName);
+        Log.d(TAG, "process instance name : " + processAppName);
 
         // 如果app启用了远程的service，此application:onCreate会被调用2次
         // 为了防止环信SDK被初始化2次，加此判断会保证SDK被初始化1次
