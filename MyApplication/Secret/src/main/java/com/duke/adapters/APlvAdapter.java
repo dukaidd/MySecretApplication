@@ -3,11 +3,14 @@ package com.duke.adapters;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.support.v7.widget.AppCompatImageButton;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -24,6 +27,7 @@ import com.duke.beans.Secret;
 import com.duke.beans.User;
 import com.duke.customview.CircleImageView;
 import com.duke.secret.ChatActivity;
+import com.duke.secret.CommentActivity;
 import com.duke.secret.HomeActivity;
 import com.duke.secret.R;
 import com.duke.utils.StringUtils;
@@ -78,12 +82,15 @@ public class APlvAdapter extends BaseAdapter implements OnClickListener {
             convertView = act.getLayoutInflater().inflate(R.layout.item_aplv_adapter, null);
             vh = new ViewHolder();
             vh.text = (TextView) convertView.findViewById(R.id.item_aplv_text);
+            vh.text.setOnClickListener(this);
+            vh.username = (TextView) convertView.findViewById(R.id.item_aplv_username);
             vh.time1 = (TextView) convertView.findViewById(R.id.item_aplv_time1);
             vh.distance = (TextView) convertView.findViewById(R.id.item_aplv_distance);
             vh.weather = (TextView) convertView.findViewById(R.id.item_aplv_weather);
             vh.sel = (AppCompatImageButton) convertView.findViewById(R.id.item_aplv_chat);
             vh.sel.setOnClickListener(this);
-            vh.ll = (LinearLayout) convertView.findViewById(R.id.item_aplv_ll);
+            vh.fl = (FrameLayout) convertView.findViewById(R.id.item_aplv_fl);
+            vh.fl.setOnClickListener(this);
             vh.like = (Button) convertView.findViewById(R.id.item_aplv_like);
             vh.like.setOnClickListener(this);
             vh.likedNum = (TextView) convertView.findViewById(R.id.item_aplv_likednum);
@@ -95,7 +102,8 @@ public class APlvAdapter extends BaseAdapter implements OnClickListener {
         final Secret secret = secrets.get(position);
         vh.text.setText(secret.getText());
         vh.text.setTextColor(secret.getTextColor());
-        vh.ll.setBackgroundColor(secret.getBgColor());
+        vh.username.setText(StringUtils.getUperCases(secret.getUsername()));
+        vh.fl.setBackgroundColor(secret.getBgColor());
         vh.time1.setText(StringUtils.parseTime(secret.getCreatedAt()));
         vh.distance.setText(getDiatance(position));
         vh.weather.setText(secret.getWeather());
@@ -142,12 +150,15 @@ public class APlvAdapter extends BaseAdapter implements OnClickListener {
         } else {
             vh.like.setBackgroundResource(R.drawable.love_n);
         }
+        vh.likedNum.setText(secret.getCollectedNum()+"");
+
         vh.like.setTag(secret);
         vh.sel.setTag(secret);
-        vh.likedNum.setText(secret.getCollectedNum() + "");
+        vh.text.setTag(secret);
 
         Typeface typeface = Typeface.createFromAsset(act.getAssets(), "fonts/mi.ttf");
         vh.text.setTypeface(typeface);
+        vh.username.setTypeface(typeface);
         vh.time1.setTypeface(typeface);
         vh.distance.setTypeface(typeface);
         vh.weather.setTypeface(typeface);
@@ -172,16 +183,26 @@ public class APlvAdapter extends BaseAdapter implements OnClickListener {
     }
 
     static class ViewHolder {
-        private TextView text, time1, distance, weather, likedNum;
+        private TextView text, time1, distance, weather, likedNum,username;
         private AppCompatImageButton sel;
         private Button like;
-        private LinearLayout ll;
+        private FrameLayout fl;
         private CircleImageView avatar;
+        private ImageView image;
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
+            case R.id.item_aplv_text:
+                Log.e("duke","textview cliked");
+                secret = (Secret) v.getTag();
+                Intent intent1 = new Intent(act, CommentActivity.class);
+                intent1.putExtra("objectId",secret.getObjectId());
+                act.startActivity(intent1);
+                break;
+
+
             case R.id.item_aplv_chat:
                 secret = (Secret) v.getTag();
                 Intent intent = new Intent();
@@ -195,7 +216,7 @@ public class APlvAdapter extends BaseAdapter implements OnClickListener {
                 break;
             case R.id.item_aplv_like:
                 LinearLayout linearLayout = (LinearLayout) v.getParent();
-                TextView collectedNum = (TextView) linearLayout.getChildAt(4);
+                TextView collectedNum = (TextView) linearLayout.getChildAt(5);
                 secret = (Secret) v.getTag();
                 if (!(secret == null || secret.equals(""))) {
                     if (secret.getCollectedUsers() == null

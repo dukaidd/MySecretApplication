@@ -114,7 +114,7 @@ public class RegisterActivity extends BaseActivity implements View.OnFocusChange
             toast("请输入用户名");
             return;
         } else if (!checkUsername(username_content)) {
-            toast("用户名由 3-10位的字母下划线和数字组成");
+            toast("用户名由以字母开头的3-10位的小写字母下划线和数字组成");
             return;
         } else if (password_content == null || password_content.equals("")) {
             toast("请输入密码");
@@ -175,7 +175,7 @@ public class RegisterActivity extends BaseActivity implements View.OnFocusChange
     }
 
     public static boolean checkUsername(String username) {
-        boolean check = username.matches("^[a-zA-z][a-zA-Z0-9_]{2,9}$");
+        boolean check = username.matches("^[a-z][a-z0-9_]{2,9}$");
         return check;
     }
 

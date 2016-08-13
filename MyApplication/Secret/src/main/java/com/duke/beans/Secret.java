@@ -2,13 +2,14 @@ package com.duke.beans;
 
 import com.baidu.mapapi.model.LatLng;
 
+import java.io.Serializable;
 import java.util.List;
 
 import cn.bmob.v3.BmobObject;
 import cn.bmob.v3.datatype.BmobFile;
 import cn.bmob.v3.datatype.BmobRelation;
 
-public class Secret extends BmobObject {
+public class Secret extends BmobObject implements Serializable{
     private int id;
     private String text;
     private int textColor;

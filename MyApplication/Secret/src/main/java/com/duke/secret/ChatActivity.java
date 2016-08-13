@@ -92,55 +92,43 @@ public class ChatActivity extends BaseActivity {
                 public void done(List<User> list, BmobException e) {
                     if (e == null) {
                         if (list == null || list.equals("")) {
+                            Log.e("duke", "查找无此人");
                             return;
                         }
                         if (list.get(0) != null) {
                             BmobRelation relation = new BmobRelation();
-                            relation.add(list.get(0));
+                            final User toChatUser = list.get(0);
+                            relation.add(toChatUser);
                             user.setFriends_relation(relation);
                             user.update(new UpdateListener() {
                                 @Override
                                 public void done(BmobException e) {
                                     if (e == null) {
-                                        BmobQuery<User> query1 = new BmobQuery<User>();
-                                        query1.addWhereEqualTo("username",toChatUsername);
-                                        query1.findObjects(new FindListener<User>() {
-                                            @Override
-                                            public void done(List<User> list, BmobException e) {
-                                                if(e==null){
-                                                    if(list==null||list.equals("")){
-                                                        Log.e("duke",toChatUsername+"查无此人");
-                                                        return;
-                                                    }
-                                                    User user = list.get(0);
-                                                    Map<String, EaseUser> contacts = MyApplication.getInstance().getContactList();
-                                                    if (contacts == null) {
-                                                        contacts = new HashMap<>();
-                                                    }
-                                                    EaseUser easeUser = new EaseUser(user.getUsername());
-                                                    if (user.getAvatarUrl() != null) {
-                                                        easeUser.setAvatar(user.getAvatarUrl());
-                                                    }
-                                                    if (user.getNick() != null) {
-                                                        easeUser.setNick(user.getNick());
-                                                    }
-                                                    contacts.put(user.getUsername(), easeUser);
-                                                    MyApplication.getInstance().setContactList(contacts);
-                                                    HomeActivity.getInstance().refreshContactList();
-                                                    Toast.makeText(ChatActivity.this, "成功添加为联系人", Toast.LENGTH_SHORT).show();
-                                                }else{
-                                                    Log.e("duke","查找toChatUsername失败"+e);
-                                                }
-                                            }
-                                        });
+                                        Map<String, EaseUser> contacts = MyApplication.getInstance().getContactList();
+                                        if (contacts == null) {
+                                            contacts = new HashMap<>();
+                                        }
+                                        EaseUser easeUser = new EaseUser(toChatUser.getUsername());
+                                        if (toChatUser.getAvatarUrl() != null) {
+                                            easeUser.setAvatar(toChatUser.getAvatarUrl());
+                                        }
+                                        if (toChatUser.getNick() != null) {
+                                            easeUser.setNick(toChatUser.getNick());
+                                        }
+                                        contacts.put(toChatUser.getUsername(), easeUser);
+                                        MyApplication.getInstance().setContactList(contacts);
+                                        HomeActivity.getInstance().refreshContactList();
+                                        Toast.makeText(ChatActivity.this, "成功添加为联系人", Toast.LENGTH_SHORT).show();
                                     } else {
                                         Toast.makeText(ChatActivity.this, "添加联系人失败" + e, Toast.LENGTH_SHORT).show();
+                                        Log.e("duke", "更新relation失败" + e);
                                     }
                                 }
                             });
                         }
                     } else {
-                        Toast.makeText(ChatActivity.this, "添加联系人失败" + e, Toast.LENGTH_SHORT).show();
+                        Log.e("duke", "查找toChatUsername失败：" + e);
+                        Toast.makeText(ChatActivity.this, "该账户已被移除", Toast.LENGTH_SHORT).show();
                     }
                 }
             });
@@ -151,10 +139,7 @@ public class ChatActivity extends BaseActivity {
             chatFragment.emptyHistory();
         }
 
-        return super.
-
-                onOptionsItemSelected(item);
-
+        return super.onOptionsItemSelected(item);
     }
 
     @Override

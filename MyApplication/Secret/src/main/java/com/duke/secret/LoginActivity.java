@@ -1,5 +1,6 @@
 package com.duke.secret;
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -40,6 +41,7 @@ public class LoginActivity extends BaseActivity {
     // UI references.
     private EditText mUsernameView, mPasswordView;
     private View mLoginFormView;
+    private ProgressDialog pd;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,7 +86,9 @@ public class LoginActivity extends BaseActivity {
      * errors are presented and no actual login attempt is made.
      */
     private void attemptLogin() {
-
+        pd = new ProgressDialog(LoginActivity.this);
+        pd.setMessage("正在登录...");
+        pd.show();
         // Reset errors.
         mUsernameView.setError(null);
         mPasswordView.setError(null);
@@ -136,7 +140,7 @@ public class LoginActivity extends BaseActivity {
                                         Log.d("main", "登陆聊天服务器成功！");
                                         toast("登录成功");
                                         startActivity(new Intent(LoginActivity.this, HomeActivity.class));
-//                                        showProgress(false);
+                                        pd.dismiss();
                                         LoginActivity.this.finish();
                                     }
                                 });
@@ -152,6 +156,7 @@ public class LoginActivity extends BaseActivity {
                                 Log.d("duke", "登陆聊天服务器失败！");
                                 runOnUiThread(new Runnable() {
                                     public void run() {
+                                        pd.dismiss();
                                         mPasswordView.setError("登录失败:" + message);
                                         mPasswordView.requestFocus();
                                     }
@@ -164,6 +169,7 @@ public class LoginActivity extends BaseActivity {
                         Log.d("duke", "登陆BMOB服务器失败！");
                         runOnUiThread(new Runnable() {
                             public void run() {
+                                pd.dismiss();
                                 mPasswordView.setError("登录失败:" + e);
                                 mPasswordView.requestFocus();
                             }

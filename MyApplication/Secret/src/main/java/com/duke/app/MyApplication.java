@@ -74,7 +74,7 @@ public class MyApplication extends Application {
         instance = this;
         initBomb();
         initBaidu();
-        HXPreferenceUtils.init(this);
+
         initHuanxin();
         initNotification();
     }
@@ -83,6 +83,7 @@ public class MyApplication extends Application {
         EaseUI.getInstance().init(this);
         //get easeui instance
         EaseUI easeUI = EaseUI.getInstance();
+        HXPreferenceUtils.init(this);
         //需要easeui库显示用户头像和昵称设置此provider
         easeUI.setUserProfileProvider(new EaseUI.EaseUserProfileProvider() {
 

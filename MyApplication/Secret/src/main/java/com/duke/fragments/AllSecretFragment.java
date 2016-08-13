@@ -13,6 +13,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
+import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.duke.adapters.APlvAdapter;
@@ -131,7 +132,7 @@ public class AllSecretFragment extends BaseFragment {
         endLayout.setPullLabel("上拉加载更多");
         endLayout.setRefreshingLabel("正在加载...");
         endLayout.setReleaseLabel("释放加载更多");
-        Typeface typeface = Typeface.createFromAsset(act.getAssets(), "fonts/youyuan.ttf");
+        Typeface typeface = Typeface.createFromAsset(act.getAssets(), "fonts/mi.ttf");
         startLayout.setTextTypeface(typeface);
         endLayout.setTextTypeface(typeface);
         startLayout.setLoadingDrawable(getResources().getDrawable(R.drawable.ic_wb_sunny_black_24dp));

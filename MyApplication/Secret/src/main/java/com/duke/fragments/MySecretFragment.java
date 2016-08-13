@@ -90,7 +90,7 @@ public class MySecretFragment extends BaseFragment implements OnClickListener {
 		endLayout.setRefreshingLabel("正在加载...");
 		endLayout.setReleaseLabel("释放加载更多");
 		endLayout.setLastUpdatedLabel(StringUtils.getTime(System.currentTimeMillis()).substring(11,16));
-		Typeface typeface = Typeface.createFromAsset(act.getAssets(), "fonts/youyuan.ttf");
+		Typeface typeface = Typeface.createFromAsset(act.getAssets(), "fonts/mi.ttf");
 		startLayout.setTextTypeface(typeface);
 		endLayout.setTextTypeface(typeface);
 		startLayout.setLoadingDrawable(getResources().getDrawable(R.drawable.ic_wb_sunny_black_24dp));
@@ -232,12 +232,4 @@ public class MySecretFragment extends BaseFragment implements OnClickListener {
 			return false;
 		}
 	};
-
-	public void scrollToTop() {
-		plv.scrollTo(0,0);
-	}
-	public void refreshListView(){
-		adapter.notifyDataSetChanged();
-	}
-
 }

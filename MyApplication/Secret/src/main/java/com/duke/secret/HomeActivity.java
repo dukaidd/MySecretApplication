@@ -340,19 +340,23 @@ public class HomeActivity extends BaseActivity
 
                 @Override
                 protected void onPostExecute(Bitmap bitmap) {
-                    Palette.from(bitmap).generate(new Palette.PaletteAsyncListener() {
-                        // get muted color from bitmap using palette and set this to collapsible toolbar
-                        @Override
-                        public void onGenerated(Palette palette) {
-                            // 通过Palette 来获取对应的色调
-                            Palette.Swatch vibrant =
-                                    palette.getDarkMutedSwatch();
-                            // 将颜色设置给相应的组件
-                            if (vibrant != null) {
-                                navigationHeader.setBackgroundColor(vibrant.getRgb());
+                    try{
+                        Palette.from(bitmap).generate(new Palette.PaletteAsyncListener() {
+                            // get muted color from bitmap using palette and set this to collapsible toolbar
+                            @Override
+                            public void onGenerated(Palette palette) {
+                                // 通过Palette 来获取对应的色调
+                                Palette.Swatch vibrant =
+                                        palette.getDarkMutedSwatch();
+                                // 将颜色设置给相应的组件
+                                if (vibrant != null) {
+                                    navigationHeader.setBackgroundColor(vibrant.getRgb());
+                                }
                             }
-                        }
-                    });
+                        });
+                    }catch (Exception e){
+                        Log.e("duke",e.toString());
+                    }
                 }
             }.execute();
         } else {
@@ -383,6 +387,12 @@ public class HomeActivity extends BaseActivity
                                     }
                                 }
                             });
+                        }else {
+                            if (user.getSex() == "男") {
+                                nav_avatar.setImageResource(R.drawable.ic_default_male);
+                            } else {
+                                nav_avatar.setImageResource(R.drawable.ic_default_female);
+                            }
                         }
                     }
                 }
@@ -548,7 +558,7 @@ public class HomeActivity extends BaseActivity
             case R.id.home_new_secret:
                 Intent intent = new Intent();
                 intent.setClass(HomeActivity.this, NewSecretActivity.class);
-                startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(this, fab, "float_action_button").toBundle());
+                startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(this).toBundle());
                 break;
             case R.id.toolbar_home:
 //                initContact();
@@ -626,6 +636,9 @@ public class HomeActivity extends BaseActivity
             if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 permissions.add(Manifest.permission.CAMERA);
             }
+            if (checkSelfPermission(Manifest.permission.WRITE_SETTINGS) != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.WRITE_SETTINGS);
+            }
             if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                 permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
             }
@@ -685,7 +698,7 @@ public class HomeActivity extends BaseActivity
     private void createDialog() {
         AlertDialog.Builder dialog = new AlertDialog.Builder(this);
         dialog.setTitle("选择方式");
-        dialog.setIcon(android.R.drawable.ic_input_add);
+        dialog.setIcon(R.drawable.ic_account_box_black_24dp);
         dialog.setItems(new String[]{"本地相册", "相机拍照"}, new DialogInterface.OnClickListener() {
 
             @Override

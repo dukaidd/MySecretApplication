@@ -13,8 +13,6 @@ import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.GridView;
-import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -55,10 +53,6 @@ public class NewSecretActivity extends BaseActivity implements View.OnClickListe
     private GridView model;
     private List<Integer> colors;
     private int textColor = Color.BLACK;
-//    public static final int bgcolors[] = {R.drawable.color_1, R.drawable.color_2,
-//            R.drawable.color_3, R.drawable.color_4, R.drawable.color_5,
-//            R.drawable.color_6, R.drawable.color_7, R.drawable.color_8,
-//            R.drawable.color_9, R.drawable.color_10};
     public static final int bgcolors[] = {Color.parseColor("#ed5565"), Color.parseColor("#fc6e51"),
             Color.parseColor("#ffce54"), Color.parseColor("#a0d468"), Color.parseColor("#48cfad"),
             Color.parseColor("#4fc1e9"), Color.parseColor("#5d9cec"), Color.parseColor("#ac92ec"),
@@ -70,8 +64,13 @@ public class NewSecretActivity extends BaseActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().requestFeature(Window.FEATURE_CONTENT_TRANSITIONS);
-        getWindow().setEnterTransition(new Explode());
-        getWindow().setExitTransition(new Slide());
+        Explode explode = new Explode();
+        explode.setDuration(500);
+        getWindow().setEnterTransition(explode);
+        Slide slide = new Slide();
+        slide.setDuration(500);
+
+        getWindow().setExitTransition(slide);
         setContentView(R.layout.activity_new);
         getWindow().setStatusBarColor(Color.parseColor("#C43828"));
         initDatas();
@@ -121,7 +120,8 @@ public class NewSecretActivity extends BaseActivity implements View.OnClickListe
                         if (e == null) {
                             Toast.makeText(NewSecretActivity.this, "成功新建秘密", Toast.LENGTH_SHORT);
                             MyApplication.getInstance().setSecret(secret_content);
-                            finish();
+                            hideSoftKeyboard();
+                            onBackPressed();
                         } else {
                             Toast.makeText(NewSecretActivity.this, "新建秘密失败", Toast.LENGTH_SHORT);
                         }
@@ -208,16 +208,16 @@ public class NewSecretActivity extends BaseActivity implements View.OnClickListe
 
     @Override
     public void onClick(View v) {
-        isEditable = !isEditable;
-        if (isEditable) {
-//            sel.setImageResource(R.drawable.favorite_light);
-            model.setVisibility(View.VISIBLE);
-        } else {
-//            sel.setImageResource(R.drawable.favorite_empty);
-            model.setVisibility(View.INVISIBLE);
-        }
-
+       closeOrOpenPalette();
     }
+public void closeOrOpenPalette(){
+    isEditable = !isEditable;
+    if (isEditable) {
+        model.setVisibility(View.VISIBLE);
+    } else {
+        model.setVisibility(View.INVISIBLE);
+    }
+}
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -228,6 +228,7 @@ public class NewSecretActivity extends BaseActivity implements View.OnClickListe
         // secret.setTextColor(Color.BLACK);
         // textColor = Color.BLACK;
         // }
+        closeOrOpenPalette();
         secret.setTextColor(Color.WHITE);
         textColor = Color.WHITE;
         secret.setBackgroundColor(colors.get(position));

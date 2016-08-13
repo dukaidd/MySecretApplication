@@ -1,11 +1,14 @@
 package com.duke.adapters;
 
+import android.content.Intent;
 import android.graphics.Typeface;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -17,6 +20,7 @@ import com.duke.app.MyApplication;
 import com.duke.beans.Secret;
 import com.duke.beans.User;
 import com.duke.customview.CircleImageView;
+import com.duke.secret.CommentActivity;
 import com.duke.secret.HomeActivity;
 import com.duke.secret.R;
 import com.duke.utils.StringUtils;
@@ -66,13 +70,15 @@ public class MPlvAdapter extends BaseAdapter implements OnClickListener {
         if (convertView == null) {
             convertView = act.getLayoutInflater().inflate(R.layout.item_mplv_adapter, null);
             vh = new ViewHolder();
+            vh.username = (TextView) convertView.findViewById(R.id.item_mplv_username);
             vh.text = (TextView) convertView.findViewById(R.id.item_mplv_text);
+            vh.text.setOnClickListener(this);
             vh.time1 = (TextView) convertView.findViewById(R.id.item_mplv_time1);
             vh.distance = (TextView) convertView.findViewById(R.id.item_mplv_distance);
             vh.weather = (TextView) convertView.findViewById(R.id.item_mplv_weather);
             vh.delete = (Button) convertView.findViewById(R.id.item_mplv_delete);
             vh.delete.setOnClickListener(this);
-            vh.ll = (LinearLayout) convertView.findViewById(R.id.item_mplv_ll);
+            vh.fl = (FrameLayout) convertView.findViewById(R.id.item_mplv_fl);
             vh.like = (Button) convertView.findViewById(R.id.item_mplv_like);
             vh.like.setOnClickListener(this);
             vh.likedNum = (TextView) convertView.findViewById(R.id.item_mplv_likednum);
@@ -82,9 +88,10 @@ public class MPlvAdapter extends BaseAdapter implements OnClickListener {
             vh = (ViewHolder) convertView.getTag();
         }
         final Secret secret = secrets.get(position);
+        vh.username.setText(StringUtils.getUperCases(curent_user));
         vh.text.setText(secret.getText());
         vh.text.setTextColor(secret.getTextColor());
-        vh.ll.setBackgroundColor(secret.getBgColor());
+        vh.fl.setBackgroundColor(secret.getBgColor());
         vh.time1.setText(StringUtils.parseTime(secret.getCreatedAt()));
         vh.distance.setText(getDiatance(position));
         vh.weather.setText(secret.getWeather());
@@ -96,11 +103,14 @@ public class MPlvAdapter extends BaseAdapter implements OnClickListener {
             vh.like.setBackgroundResource(R.drawable.love_n);
         }
         vh.like.setTag(secret);
+        vh.text.setTag(secret);
         vh.delete.setTag(secret);
+
         vh.likedNum.setText(secret.getCollectedNum() + "");
 
         Typeface typeface = Typeface.createFromAsset(act.getAssets(), "fonts/mi.ttf");
         vh.text.setTypeface(typeface);
+        vh.username.setTypeface(typeface);
         vh.time1.setTypeface(typeface);
         vh.distance.setTypeface(typeface);
         vh.weather.setTypeface(typeface);
@@ -126,16 +136,25 @@ public class MPlvAdapter extends BaseAdapter implements OnClickListener {
     }
 
     static class ViewHolder {
-        private TextView text, time1, distance, weather, likedNum;
+        private TextView text, time1, distance, weather, likedNum,username;
         private Button delete;
         private Button like;
-        private LinearLayout ll;
+        private FrameLayout fl;
         private CircleImageView avatar;
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
+
+            case R.id.item_mplv_text:
+                Log.e("duke","textview cliked");
+                secret = (Secret) v.getTag();
+                Intent intent1 = new Intent(act, CommentActivity.class);
+                intent1.putExtra("objectId",secret.getObjectId());
+                act.startActivity(intent1);
+                break;
+
             case R.id.item_mplv_delete:
                 secret = (Secret) v.getTag();
                 secret.delete(new UpdateListener() {
@@ -143,7 +162,6 @@ public class MPlvAdapter extends BaseAdapter implements OnClickListener {
                     public void done(BmobException e) {
                         if(e==null){
                             Toast.makeText(act,"删除成功:"+secret.getUpdatedAt(),Toast.LENGTH_SHORT).show();
-                            act.msf.refreshListView();
                         }else{
                             Toast.makeText(act,"删除失败：" + e.getMessage(),Toast.LENGTH_SHORT).show();
                         }
