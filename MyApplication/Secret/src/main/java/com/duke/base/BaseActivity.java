@@ -10,6 +10,10 @@ import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.util.Util;
+import com.duke.app.MyApplication;
+
 
 public class BaseActivity extends AppCompatActivity {
     protected InputMethodManager inputMethodManager;

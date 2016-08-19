@@ -15,7 +15,6 @@ import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.view.animation.AnimationUtils;
 import android.view.animation.ScaleAnimation;
-import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,6 +24,7 @@ import com.baidu.location.BDLocationListener;
 import com.baidu.location.LocationClient;
 import com.baidu.location.LocationClientOption;
 import com.duke.base.BaseActivity;
+import com.duke.beans.Avatar;
 import com.duke.beans.User;
 import com.duke.customview.CircleImageView;
 import com.duke.service.LocationService;
@@ -32,7 +32,6 @@ import com.duke.utils.BitmapUtil;
 import com.duke.utils.StringUtils;
 import com.easemob.chat.EMChat;
 import com.easemob.chat.EMChatManager;
-import com.easemob.chat.EMGroupManager;
 import com.easemob.easeui.utils.EaseCommonUtils;
 import com.lidroid.xutils.HttpUtils;
 import com.lidroid.xutils.exception.HttpException;
@@ -57,8 +56,7 @@ public class SplashActivity extends BaseActivity implements AnimationListener, D
     private ImageView imageView;
     private AlphaAnimation animation;
     private ScaleAnimation scaleAnimation;
-    private TranslateAnimation translateAnimation;
-    private TextView time, weather,username;
+    private TextView time, weather, nickname;
     private LocationClient lc;
     private LocationClientOption option;
     private CircleImageView avatar;
@@ -76,9 +74,9 @@ public class SplashActivity extends BaseActivity implements AnimationListener, D
         slide.setDuration(1000);
 
         setContentView(R.layout.act_splash);
-        getWindow().setStatusBarColor(Color.parseColor("#C43828"));
-
+        getWindow().setStatusBarColor(Color.parseColor("#4AA5F2"));
         startService(new Intent(this, LocationService.class));
+
         isFirstLaunch();
         logined();
         initViews();
@@ -100,7 +98,6 @@ public class SplashActivity extends BaseActivity implements AnimationListener, D
             public void onReceiveLocation(BDLocation arg0) {
                 // TODO Auto-generated method stub
                 String city = arg0.getCity();
-
                 if (city == null) {
                     city = "上海";
                 } else if (city.equals("")) {
@@ -122,7 +119,6 @@ public class SplashActivity extends BaseActivity implements AnimationListener, D
                         weather.setText(weather_content);
                     }
                 });
-
             }
         });
     }
@@ -141,34 +137,34 @@ public class SplashActivity extends BaseActivity implements AnimationListener, D
             // ** 免登陆情况 加载所有本地群和会话
             //不是必须的，不加sdk也会自动异步去加载(不会重复加载)；
             //加上的话保证进了主页面会话和群组都已经load完毕
-            EMGroupManager.getInstance().loadAllGroups();
             EMChatManager.getInstance().loadAllConversations();
-            username = (TextView) findViewById(R.id.splash_username);
-            username.setText(StringUtils.getUperCases(BmobUser.getCurrentUser().getUsername()));
-            BmobQuery<User> query = new BmobQuery<>();
-            query.addWhereEqualTo("username",BmobUser.getCurrentUser().getUsername());
-            query.include("avatar_pointer");
-            query.findObjects(new FindListener<User>() {
+            nickname = (TextView) findViewById(R.id.splash_nickname);
+            if(BmobUser.getCurrentUser(User.class).getNickname()!=null){
+                nickname.setText(BmobUser.getCurrentUser(User.class).getNickname());
+            }else {
+                nickname.setText(StringUtils.getUperCases(BmobUser.getCurrentUser().getUsername()));
+            }
+            BmobQuery<Avatar> query = new BmobQuery<>();
+            query.order("-createdAt");
+            query.addWhereEqualTo("user",BmobUser.getCurrentUser());
+            query.findObjects(new FindListener<Avatar>() {
+
                 @Override
-                public void done(List<User> list, BmobException e) {
+                public void done(List<Avatar> list, BmobException e) {
                     if(e==null){
-                        String avatarUrl = list.get(0).getAvatarUrl();
+                        String avatarUrl = list.get(0).getAvatar().getUrl();
                         BitmapUtil.getBitUtil(SplashActivity.this).display(avatar,avatarUrl);
                     }else{
                         Log.e("duke","Splash"+e);
-
                     }
                 }
             });
-
-
-
         }
     }
 
     private void initViews() {
         avatar = (CircleImageView) findViewById(R.id.splash_avatar);
-        username = (TextView) findViewById(R.id.splash_username);
+        nickname = (TextView) findViewById(R.id.splash_nickname);
         time = (TextView) findViewById(R.id.splash_time);
         weather = (TextView) findViewById(R.id.splash_weather);
         imageView = (ImageView) findViewById(R.id.splash_image);
@@ -245,15 +241,15 @@ public class SplashActivity extends BaseActivity implements AnimationListener, D
         }
     }
 
-    @Override
-    protected void onStart() {
-        lc.start();
-        super.onStart();
-    }
-
-    @Override
-    public void onDestroy() {
-        lc.stop();
-        super.onDestroy();
-    }
+//    @Override
+//    protected void onStart() {
+//        lc.start();
+//        super.onStart();
+//    }
+//
+//    @Override
+//    public void onDestroy() {
+//        lc.stop();
+//        super.onDestroy();
+//    }
 }

@@ -12,9 +12,11 @@ import android.widget.Toast;
 import com.duke.app.MyApplication;
 import com.duke.base.BaseActivity;
 import com.duke.beans.User;
+import com.duke.utils.StringUtils;
 import com.easemob.easeui.EaseConstant;
 import com.easemob.easeui.domain.EaseUser;
 import com.easemob.easeui.ui.EaseChatFragment;
+import com.easemob.easeui.utils.EaseUserUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +40,13 @@ public class ChatActivity extends BaseActivity {
         super.onCreate(arg0);
         setContentView(R.layout.activity_chat);
         Toolbar toolbar = (Toolbar) findViewById(R.id.activity_chat_bar);
+        activityInstance = this;
+        //聊天人或群id
+        toChatUsername = getIntent().getExtras().getString(EaseConstant.EXTRA_USER_ID);
+        if (toChatUsername != null) {
+            String nickname = EaseUserUtils.getUserNick(toChatUsername);
+            toolbar.setTitle(nickname);
+        }
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
@@ -47,13 +56,7 @@ public class ChatActivity extends BaseActivity {
                 onBackPressed();
             }
         });
-        activityInstance = this;
-        //聊天人或群id
-        toChatUsername = getIntent().getExtras().getString(EaseConstant.EXTRA_USER_ID);
-//        Log.i("duke", "onCreate: "+toChatUsername);
-        if (toChatUsername != null) {
-            toolbar.setSubtitle(toChatUsername);
-        }
+
         chatFragment = new EaseChatFragment();
         //传入参数
         chatFragment.setArguments(getIntent().getExtras());
@@ -109,11 +112,10 @@ public class ChatActivity extends BaseActivity {
                                             contacts = new HashMap<>();
                                         }
                                         EaseUser easeUser = new EaseUser(toChatUser.getUsername());
-                                        if (toChatUser.getAvatarUrl() != null) {
-                                            easeUser.setAvatar(toChatUser.getAvatarUrl());
-                                        }
-                                        if (toChatUser.getNick() != null) {
-                                            easeUser.setNick(toChatUser.getNick());
+                                        if (toChatUser.getNickname() != null) {
+                                            easeUser.setNick(toChatUser.getNickname());
+                                        }else{
+                                            easeUser.setNick(StringUtils.getUperCases(toChatUser.getUsername()));
                                         }
                                         contacts.put(toChatUser.getUsername(), easeUser);
                                         MyApplication.getInstance().setContactList(contacts);

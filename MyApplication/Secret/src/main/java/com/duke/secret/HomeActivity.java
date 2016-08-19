@@ -16,6 +16,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -37,7 +38,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -45,12 +45,14 @@ import com.duke.app.MyApplication;
 import com.duke.base.BaseActivity;
 import com.duke.beans.Avatar;
 import com.duke.beans.User;
+import com.duke.customview.CircleImageView;
 import com.duke.fragments.AllSecretFragment;
 import com.duke.fragments.MyCollectedSecretFragment;
 import com.duke.fragments.MySecretFragment;
 import com.duke.fragments.MySecretPathFragment;
 import com.duke.fragments.SettingsFragment;
 import com.duke.utils.BitmapUtil;
+import com.duke.utils.StringUtils;
 import com.easemob.chat.EMChat;
 import com.easemob.chat.EMChatManager;
 import com.easemob.chat.EMConversation;
@@ -61,6 +63,7 @@ import com.easemob.easeui.domain.EaseUser;
 import com.easemob.easeui.ui.EaseContactListFragment;
 import com.easemob.easeui.ui.EaseConversationListFragment;
 import com.easemob.easeui.utils.EaseCommonUtils;
+import com.easemob.easeui.utils.EaseUserUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -84,7 +87,6 @@ import cn.bmob.v3.datatype.BmobPointer;
 import cn.bmob.v3.exception.BmobException;
 import cn.bmob.v3.listener.FindListener;
 import cn.bmob.v3.listener.SaveListener;
-import cn.bmob.v3.listener.UpdateListener;
 import cn.bmob.v3.listener.UploadBatchListener;
 
 
@@ -99,8 +101,8 @@ public class HomeActivity extends BaseActivity
     private AllSecretFragment af;
     private MyCollectedSecretFragment mcsf;
     private MySecretPathFragment mspf;
-    private ImageView nav_avatar;
-    private TextView nav_username, nav_email;
+    private CircleImageView nav_avatar;
+    private TextView nav_username;
     private NavigationView navigationView;
     private LinearLayout navigationHeader;
     private Toolbar toolbar;
@@ -118,6 +120,7 @@ public class HomeActivity extends BaseActivity
     private int index;
     private int currentTabIndex = 0;
     private LinearLayout ll_bottom;
+    public Typeface typeface;
 
     public static HomeActivity getInstance() {
         return instance;
@@ -140,6 +143,7 @@ public class HomeActivity extends BaseActivity
     }
 
     private void initView() {
+        typeface = Typeface.createFromAsset(getAssets(),"fonts/mi.ttf");
         getWindow().setStatusBarColor(Color.parseColor("#C43828"));
 
         home_bar = (AppBarLayout) findViewById(R.id.home_app_bar);
@@ -162,10 +166,7 @@ public class HomeActivity extends BaseActivity
         navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
         navigationHeader = (LinearLayout) navigationView.getHeaderView(0);
-
-        nav_avatar = (ImageView) navigationHeader.getChildAt(0);
-        nav_username = (TextView) navigationHeader.getChildAt(1);
-        nav_email = (TextView) navigationHeader.getChildAt(2);
+        nav_avatar = (CircleImageView) navigationHeader.getChildAt(0);
 
         nav_avatar.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -175,9 +176,8 @@ public class HomeActivity extends BaseActivity
         });
         User user = BmobUser.getCurrentUser(User.class);
         setAvatarAndBG(user);
-        nav_username.setText(user.getUsername().toString());
-        nav_email.setText(user.getEmail().toString());
-
+        nav_username = (TextView) navigationHeader.getChildAt(1);
+        EaseUserUtils.setUserNick(user.getUsername(), nav_username);
         unreadLabel = (TextView) findViewById(R.id.unread_msg_number);
     }
 
@@ -225,52 +225,36 @@ public class HomeActivity extends BaseActivity
         final Map<String, EaseUser> contacts = new HashMap<>();
         BmobQuery<User> query = new BmobQuery<User>();
         query.setLimit(100);
-        User user = BmobUser.getCurrentUser(User.class);
-        query.addWhereRelatedTo("friends_relation", new BmobPointer(user));
+        User currentUser = BmobUser.getCurrentUser(User.class);
+        query.addWhereRelatedTo("friends_relation", new BmobPointer(currentUser));
         query.findObjects(new FindListener<User>() {
 
             @Override
             public void done(List<User> list, BmobException e) {
                 if (e == null) {
-                    if (list == null || list.equals("")) {
-                        return;
-                    }
 //                    Log.i("duke", "list大小：" + list.size());
                     for (final User user : list) {
 //                        Log.i("duke", user.getUsername());
                         final EaseUser easeUser = new EaseUser(user.getUsername());
-                        if (user.getAvatarUrl() != null) {
-                            easeUser.setAvatar(user.getAvatarUrl());
-                        } else {
-                            BmobQuery<Avatar> query = new BmobQuery<Avatar>();
-                            query.order("-createdAt");
-                            query.addWhereEqualTo("user", user);
-                            query.findObjects(new FindListener<Avatar>() {
-                                @Override
-                                public void done(List<Avatar> list, BmobException e) {
-                                    if (e == null) {
-                                        if (list == null || list.equals("")) {
-                                            return;
-                                        }
-                                        user.setAvatarUrl(list.get(0).getAvatar().getUrl());
-                                        user.update(new UpdateListener() {
-                                            @Override
-                                            public void done(BmobException e) {
-                                                if (e == null) {
-                                                    Log.i("duke", "user表设置头像URL成功");
-                                                }
-                                            }
-                                        });
-                                        if (list.get(0) != null && list.get(0).getAvatar() != null) {
-                                            easeUser.setAvatar(list.get(0).getAvatar().getUrl());
-                                        }
+                        BmobQuery<Avatar> query = new BmobQuery<Avatar>();
+                        query.order("-createdAt");
+                        query.addWhereEqualTo("user", user);
+                        query.findObjects(new FindListener<Avatar>() {
+                            @Override
+                            public void done(List<Avatar> list, BmobException e) {
+                                if (e == null) {
+                                    if (list.get(0) != null && list.get(0).getAvatar() != null) {
+                                        easeUser.setAvatar(list.get(0).getAvatar().getUrl());
                                     }
-
+                                } else {
+                                    Log.e("duke", e.toString());
                                 }
-                            });
-                        }
-                        if (user.getNick() != null) {
-                            easeUser.setNick(user.getNick());
+                            }
+                        });
+                        if (user.getNickname() != null) {
+                            easeUser.setNick(user.getNickname());
+                        } else {
+                            easeUser.setNick(StringUtils.getUperCases(user.getUsername()));
                         }
                         EaseCommonUtils.setUserInitialLetter(easeUser);
                         if (MyApplication.allUsers == null) {
@@ -293,7 +277,15 @@ public class HomeActivity extends BaseActivity
         contactListFragment.refresh();
     }
 
-    private void setAvatarAndBG(Bitmap bitmap) {
+    public void setNaviNick() {
+        EaseUserUtils.setUserNick(BmobUser.getCurrentUser().getUsername(), nav_username);
+    }
+    public void settingRefresh(){
+        settingFragment.onRefresh();
+    }
+
+    public void setAvatarAndBG(Bitmap bitmap) {
+
         nav_avatar.setImageBitmap(bitmap);
         Palette.from(bitmap).generate(new Palette.PaletteAsyncListener() {
             // get muted color from bitmap using palette and set this to collapsible toolbar
@@ -310,141 +302,72 @@ public class HomeActivity extends BaseActivity
         });
     }
 
-    private void setAvatarAndBG(final User user) {
-        if (user.getAvatarUrl() != null) {
-            final String avatarUrl = user.getAvatarUrl();
-            BitmapUtil.getBitUtil(HomeActivity.this).display(nav_avatar, avatarUrl);
-            new AsyncTask<String, Integer, Bitmap>() {
-                @Override
-                protected Bitmap doInBackground(String... params) {
-                    Bitmap mbitmap = null;
-                    URL fileUrl = null;
-                    try {
-                        fileUrl = new URL(avatarUrl);
-                    } catch (MalformedURLException e) {
-                        e.printStackTrace();
-                    }
-
-                    try {
-                        HttpURLConnection conn = (HttpURLConnection) fileUrl
-                                .openConnection();
-                        conn.setDoInput(true);
-                        conn.connect();
-                        InputStream is = conn.getInputStream();
-                        mbitmap = BitmapFactory.decodeStream(is);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    return mbitmap;
-                }
-
-                @Override
-                protected void onPostExecute(Bitmap bitmap) {
-                    try{
-                        Palette.from(bitmap).generate(new Palette.PaletteAsyncListener() {
-                            // get muted color from bitmap using palette and set this to collapsible toolbar
-                            @Override
-                            public void onGenerated(Palette palette) {
-                                // 通过Palette 来获取对应的色调
-                                Palette.Swatch vibrant =
-                                        palette.getDarkMutedSwatch();
-                                // 将颜色设置给相应的组件
-                                if (vibrant != null) {
-                                    navigationHeader.setBackgroundColor(vibrant.getRgb());
-                                }
-                            }
-                        });
-                    }catch (Exception e){
-                        Log.e("duke",e.toString());
-                    }
-                }
-            }.execute();
-        } else {
-            BmobQuery<Avatar> query = new BmobQuery<Avatar>();
-            query.addWhereEqualTo("user", user);
-            query.order("-createdAt");
-            query.findObjects(new FindListener<Avatar>() {
-                @Override
-                public void done(List<Avatar> list, BmobException e) {
-                    if (e == null) {
-                        if (list == null || list.equals("")) {
-                            if (user.getSex() == "男") {
-                                nav_avatar.setImageResource(R.drawable.ic_default_male);
-                            } else {
-                                nav_avatar.setImageResource(R.drawable.ic_default_female);
-                            }
-                            return;
-                        }
-                        if (list.get(0) != null && list.get(0).getAvatar() != null) {
-
-                            setAvatarAndBG(list.get(0).getAvatar().getUrl());
-                            user.setAvatarUrl(list.get(0).getAvatar().getUrl());
-                            user.update(new UpdateListener() {
-                                @Override
-                                public void done(BmobException e) {
-                                    if (e == null) {
-                                        Log.i("duke", "user表设置头像URL成功");
-                                    }
-                                }
-                            });
-                        }else {
-                            if (user.getSex() == "男") {
-                                nav_avatar.setImageResource(R.drawable.ic_default_male);
-                            } else {
-                                nav_avatar.setImageResource(R.drawable.ic_default_female);
-                            }
-                        }
-                    }
-                }
-            });
-        }
-    }
-
-    private void setAvatarAndBG(final String avatarUrl) {
-        if (avatarUrl != null) {
-            BitmapUtil.getBitUtil(HomeActivity.this).display(nav_avatar, avatarUrl);
-            new AsyncTask<String, Integer, Bitmap>() {
-                @Override
-                protected Bitmap doInBackground(String... params) {
-                    Bitmap mbitmap = null;
-                    URL fileUrl = null;
-                    try {
-                        fileUrl = new URL(avatarUrl);
-                    } catch (MalformedURLException e) {
-                        e.printStackTrace();
-                    }
-
-                    try {
-                        HttpURLConnection conn = (HttpURLConnection) fileUrl
-                                .openConnection();
-                        conn.setDoInput(true);
-                        conn.connect();
-                        InputStream is = conn.getInputStream();
-                        mbitmap = BitmapFactory.decodeStream(is);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    return mbitmap;
-                }
-
-                @Override
-                protected void onPostExecute(Bitmap bitmap) {
-                    Palette.from(bitmap).generate(new Palette.PaletteAsyncListener() {
-                        // get muted color from bitmap using palette and set this to collapsible toolbar
+    public void setAvatarAndBG(final User user) {
+        BmobQuery<Avatar> query = new BmobQuery<>();
+        query.order("-createdAt");
+        query.addWhereEqualTo("user", user);
+        query.findObjects(new FindListener<Avatar>() {
+            @Override
+            public void done(List<Avatar> list, BmobException e) {
+                if (e == null) {
+                    final String avatarUrl = list.get(0).getAvatar().getUrl();
+                    BitmapUtil.getBitUtil(HomeActivity.this).display(nav_avatar, avatarUrl);
+                    new AsyncTask<String, Integer, Bitmap>() {
                         @Override
-                        public void onGenerated(Palette palette) {
-                            // 通过Palette 来获取对应的色调
-                            Palette.Swatch vibrant =
-                                    palette.getDarkMutedSwatch();
-                            // 将颜色设置给相应的组件
-                            if (vibrant != null) {
-                                navigationHeader.setBackgroundColor(vibrant.getRgb());
+                        protected Bitmap doInBackground(String... params) {
+                            Bitmap mbitmap = null;
+                            URL fileUrl = null;
+                            try {
+                                fileUrl = new URL(avatarUrl);
+                            } catch (MalformedURLException e) {
+                                e.printStackTrace();
+                            }
+
+                            try {
+                                HttpURLConnection conn = (HttpURLConnection) fileUrl
+                                        .openConnection();
+                                conn.setDoInput(true);
+                                conn.connect();
+                                InputStream is = conn.getInputStream();
+                                mbitmap = BitmapFactory.decodeStream(is);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            return mbitmap;
+                        }
+
+                        @Override
+                        protected void onPostExecute(Bitmap bitmap) {
+                            try {
+                                Palette.from(bitmap).generate(new Palette.PaletteAsyncListener() {
+                                    // get muted color from bitmap using palette and set this to collapsible toolbar
+                                    @Override
+                                    public void onGenerated(Palette palette) {
+                                        // 通过Palette 来获取对应的色调
+                                        Palette.Swatch vibrant =
+                                                palette.getDarkMutedSwatch();
+                                        // 将颜色设置给相应的组件
+                                        if (vibrant != null) {
+                                            navigationHeader.setBackgroundColor(vibrant.getRgb());
+                                        }
+                                    }
+                                });
+                            } catch (Exception e) {
+                                Log.e("duke", e.toString());
                             }
                         }
-                    });
+                    }.execute();
+
+                } else {
+                    if (user.getSex().equals("男")) {
+                        nav_avatar.setImageResource(R.drawable.ic_default_male);
+                    } else {
+                        nav_avatar.setImageResource(R.drawable.ic_default_female);
+                    }
+                    Log.e("duke", e.toString());
                 }
-            }.execute();
-        }
+            }
+        });
     }
 
     private long current;
@@ -480,10 +403,10 @@ public class HomeActivity extends BaseActivity
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-//        if (id == R.id.action_settings) {
-//            return true;
-//        }
+//        noinspection SimplifiableIfStatement
+        if (id == R.id.activity_home_add) {
+           startActivity(new Intent(this,AddFriendActivity.class));
+        }
 
         return super.onOptionsItemSelected(item);
     }
@@ -800,37 +723,11 @@ public class HomeActivity extends BaseActivity
                         if (e == null) {
                             toast("设置成功");
                             Log.i("duke", o.toString());
-                            BmobQuery<Avatar> query = new BmobQuery<Avatar>();
-                            query.addWhereEqualTo("objectId", o);
-                            query.findObjects(new FindListener<Avatar>() {
-                                @Override
-                                public void done(List<Avatar> list, BmobException e) {
-                                    if (list == null || list.equals("")) {
-                                        return;
-                                    }
-                                    Log.i("duke", list.toString());
-                                    if (list.get(0) != null) {
-                                        user.setAvatarUrl(list.get(0).getAvatar().getUrl());
-                                        user.update(new UpdateListener() {
-                                            @Override
-                                            public void done(BmobException e) {
-                                                if (e == null) {
-                                                    Log.i("duke", "user表设置头像URL成功");
-                                                } else {
-                                                    Log.i("duke", "user表设置头像URL出错：" + e);
-                                                }
-                                            }
-                                        });
-                                    }
-                                }
-                            });
-
                         } else {
                             toast("设置失败" + e);
                         }
                     }
                 });
-
             }
 
             @Override
@@ -923,6 +820,22 @@ public class HomeActivity extends BaseActivity
 
         }
         currentTabIndex = index;
+    }
+
+    public void showSuccessToast() {
+        toast("分享成功");
+    }
+
+    public void showFailToast() {
+        toast("分享失败");
+    }
+
+    public void showSetSuccessToast() {
+        toast("修改成功");
+    }
+
+    public void showSetFailToast() {
+        toast("修改失败");
     }
 
 }

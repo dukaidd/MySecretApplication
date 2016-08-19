@@ -21,7 +21,7 @@ public class Secret extends BmobObject implements Serializable{
     private int collectedNum;
     private String collectedUsers;
     private User author;//帖子的发布者，这里体现的是一对一的关系，该帖子属于某个用户
-    private BmobFile image;//帖子图片
+    private SecretImage image;//帖子图片
     private BmobRelation likes;//多对多关系：用于存储喜欢该帖子的所有用户
     private String avatarUrl;
 
@@ -41,11 +41,11 @@ public class Secret extends BmobObject implements Serializable{
         this.author = author;
     }
 
-    public BmobFile getImage() {
+    public SecretImage getImage() {
         return image;
     }
 
-    public void setImage(BmobFile image) {
+    public void setImage(SecretImage image) {
         this.image = image;
     }
 

@@ -13,5 +13,12 @@ public class BitmapUtil {
 		bu.configDefaultLoadFailedImage(R.drawable.ic_default_male);
 		return bu;
 	}
+	public  static void setAvatar(){
+
+
+
+
+
+	}
 
 }

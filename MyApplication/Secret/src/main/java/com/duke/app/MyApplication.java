@@ -2,14 +2,10 @@ package com.duke.app;
 
 import android.app.Application;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.util.Log;
 
 import com.baidu.location.BDLocation;
 import com.baidu.mapapi.SDKInitializer;
-import com.duke.beans.Avatar;
 import com.duke.beans.Secret;
-import com.duke.beans.User;
 import com.duke.secret.ChatActivity;
 import com.duke.utils.HXPreferenceUtils;
 import com.easemob.chat.EMChatManager;
@@ -19,7 +15,6 @@ import com.easemob.chat.OnNotificationClickListener;
 import com.easemob.easeui.EaseConstant;
 import com.easemob.easeui.controller.EaseUI;
 import com.easemob.easeui.domain.EaseUser;
-import com.easemob.easeui.utils.EaseCommonUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,21 +22,10 @@ import java.util.List;
 import java.util.Map;
 
 import cn.bmob.v3.Bmob;
-import cn.bmob.v3.BmobQuery;
-import cn.bmob.v3.BmobUser;
-import cn.bmob.v3.datatype.BmobPointer;
-import cn.bmob.v3.exception.BmobException;
-import cn.bmob.v3.listener.FindListener;
-import cn.bmob.v3.listener.UpdateListener;
-
-import static com.easemob.easeui.utils.EaseCommonUtils.setUserInitialLetter;
 
 
 public class MyApplication extends Application {
     private static MyApplication instance;
-    private Secret secret;
-
-    private Secret secrets_temp;
 
     private List<BDLocation> locations = new ArrayList<BDLocation>();
 
@@ -50,14 +34,6 @@ public class MyApplication extends Application {
     public static Map<String, EaseUser> allUsers = new HashMap<>();
 
     private Map<String, EaseUser> contactList = new HashMap<>();
-
-    public Secret getSecret() {
-        return secret;
-    }
-
-    public void setSecret(Secret secret) {
-        this.secret = secret;
-    }
 
     public List<BDLocation> getLocations() {
         return locations;
@@ -143,13 +119,16 @@ public class MyApplication extends Application {
         });
 
     }
+
     private void initBaidu() {
 
         SDKInitializer.initialize(getApplicationContext());
     }
+
     private void initBomb() {
         Bmob.initialize(getApplicationContext(), "5c1a8dced4ad68a93a762fef87da2652");
     }
+    /**
     public void addContacts(List<User> list) {
         for (int i = 0; i < list.size(); i++) {
             final User user = list.get(i);
@@ -184,8 +163,8 @@ public class MyApplication extends Application {
                     }
                 });
             }
-            if (user.getNick() != null) {
-                easeUser.setNick(user.getNick());
+            if (user.getNickname() != null) {
+                easeUser.setNickname(user.getNickname());
             }
             setUserInitialLetter(easeUser);
             if (allUsers == null) {
@@ -229,8 +208,8 @@ public class MyApplication extends Application {
                     }
                 });
             }
-            if (user.getNick() != null) {
-                easeUser.setNick(user.getNick());
+            if (user.getNickname() != null) {
+                easeUser.setNickname(user.getNickname());
             }
             setUserInitialLetter(easeUser);
             if (allUsers == null) {
@@ -239,22 +218,16 @@ public class MyApplication extends Application {
             allUsers.put(user.getUsername(), easeUser);
         }
     }
+    **/
 
     public static MyApplication getInstance() {
 
         return instance;
     }
 
-    public Secret getSecrets_temp() {
-        return secrets_temp;
-    }
-
-    public void setSecrets_temp(Secret secrets_temp) {
-        instance.secrets_temp = secrets_temp;
-    }
 
     public Map<String, EaseUser> getContactList() {
-        if(contactList==null){
+        if (contactList == null) {
             return new HashMap<>();
         }
         return contactList;
@@ -271,7 +244,6 @@ public class MyApplication extends Application {
     public void setOpen(boolean isOpen) {
         this.isOpen = isOpen;
     }
-
 
 
 }

@@ -87,6 +87,8 @@ public class EaseBaiduMapActivity extends BaseActivity {
                 onBackPressed();
             }
         });
+//        toolbar.setTitle("友呼");
+//        toolbar.setSubtitle("位置信息");
         instance = this;
         //在使用SDK各组件之前初始化context信息，传入ApplicationContext
         //注意该方法要再setContentView方法之前实现
@@ -194,6 +196,7 @@ public class EaseBaiduMapActivity extends BaseActivity {
     protected void onDestroy() {
         if (mLocClient != null)
             mLocClient.stop();
+        if(mMapView!=null)
         mMapView.onDestroy();
         unregisterReceiver(mBaiduReceiver);
         super.onDestroy();

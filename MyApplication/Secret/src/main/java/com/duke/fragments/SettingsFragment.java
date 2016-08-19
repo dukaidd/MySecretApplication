@@ -1,6 +1,7 @@
 package com.duke.fragments;
 
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.text.TextUtils;
@@ -16,14 +17,18 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.duke.app.Constant;
 import com.duke.app.MyApplication;
+import com.duke.beans.User;
+import com.duke.customview.CircleImageView;
 import com.duke.secret.HomeActivity;
 import com.duke.secret.LoginActivity;
 import com.duke.secret.R;
+import com.duke.secret.UserInfoActivity;
 import com.duke.utils.HXPreferenceUtils;
 import com.easemob.chat.EMChatManager;
 import com.easemob.chat.EMChatOptions;
+import com.easemob.easeui.domain.EaseUser;
+import com.easemob.easeui.utils.EaseUserUtils;
 
 import cn.bmob.v3.BmobUser;
 
@@ -91,14 +96,24 @@ public class SettingsFragment extends Fragment implements OnClickListener {
     private Button logoutBtn;
 
     private EMChatOptions chatOptions;
+
+    private RelativeLayout profile;
+    private CircleImageView avatar;
+    private ImageView gender;
+    private TextView nick, username;
+    private User currentUser;
+    private HomeActivity act;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_settings, container, false);
     }
-    
+
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        currentUser = BmobUser.getCurrentUser(User.class);
+        act = HomeActivity.getInstance();
         initView(savedInstanceState);
 
     }
@@ -113,7 +128,25 @@ public class SettingsFragment extends Fragment implements OnClickListener {
         }
         header.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.MATCH_PARENT, hight));
         header.setBackgroundResource(R.drawable.flag);
-        linearLayout.addView(header,0);
+        linearLayout.addView(header, 0);
+        profile = (RelativeLayout) getView().findViewById(R.id.view_user);
+        profile.setOnClickListener(this);
+        avatar = (CircleImageView) getView().findViewById(R.id.head);
+        EaseUserUtils.setUserAvatar(act, currentUser.getUsername(), avatar);
+        gender = (ImageView) getView().findViewById(R.id.iv_sex);
+        if (currentUser.getSex().equals("男")) {
+            gender.setImageResource(R.drawable.ic_sex_male);
+        } else {
+            gender.setImageResource(R.drawable.ic_sex_female);
+        }
+        nick = (TextView) getView().findViewById(R.id.tvname);
+        EaseUserUtils.setUserNick(currentUser.getUsername(), nick);
+        username = (TextView) getView().findViewById(R.id.tvmsg);
+        username.setText("用户名：" + currentUser.getUsername());
+
+        Typeface typeface = Typeface.createFromAsset(act.getAssets(), "fonts/mi.ttf");
+        username.setTypeface(typeface);
+        nick.setTypeface(typeface);
 
         logoutBtn = (Button) getView().findViewById(R.id.btn_logout);
         logoutBtn.setOnClickListener(new OnClickListener() {
@@ -129,7 +162,7 @@ public class SettingsFragment extends Fragment implements OnClickListener {
         });
 
 
-        if(savedInstanceState != null && savedInstanceState.getBoolean("isConflict", false))
+        if (savedInstanceState != null && savedInstanceState.getBoolean("isConflict", false))
             return;
         rl_switch_notification = (RelativeLayout) getView().findViewById(R.id.rl_switch_notification);
         rl_switch_sound = (RelativeLayout) getView().findViewById(R.id.rl_switch_sound);
@@ -146,8 +179,7 @@ public class SettingsFragment extends Fragment implements OnClickListener {
         iv_switch_close_speaker = (ImageView) getView().findViewById(R.id.iv_switch_close_speaker);
 
 
-
-        if(!TextUtils.isEmpty(EMChatManager.getInstance().getCurrentUser())){
+        if (!TextUtils.isEmpty(EMChatManager.getInstance().getCurrentUser())) {
             logoutBtn.setText(getString(R.string.button_logout) + "(" + EMChatManager.getInstance().getCurrentUser() + ")");
         }
 
@@ -203,9 +235,17 @@ public class SettingsFragment extends Fragment implements OnClickListener {
             iv_switch_close_speaker.setVisibility(View.VISIBLE);
         }
     }
+
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
+
+            case R.id.view_user:
+                Intent intent = new Intent(act, UserInfoActivity.class);
+                startActivity(intent);
+                break;
+
+
             case R.id.rl_switch_notification:
                 if (iv_switch_open_notification.getVisibility() == View.VISIBLE) {
                     iv_switch_open_notification.setVisibility(View.INVISIBLE);
@@ -279,5 +319,9 @@ public class SettingsFragment extends Fragment implements OnClickListener {
                 break;
         }
 
+    }
+    public void onRefresh() {
+        EaseUserUtils.setUserAvatar(act,currentUser.getUsername(),avatar);
+        EaseUserUtils.setUserNick(currentUser.getUsername(),nick);
     }
 }

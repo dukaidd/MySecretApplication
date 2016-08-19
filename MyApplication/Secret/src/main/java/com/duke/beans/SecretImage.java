@@ -10,4 +10,11 @@ import cn.bmob.v3.datatype.BmobFile;
 public class SecretImage extends BmobObject {
     private BmobFile image;
 
+    public BmobFile getImage() {
+        return image;
+    }
+
+    public void setImage(BmobFile image) {
+        this.image = image;
+    }
 }

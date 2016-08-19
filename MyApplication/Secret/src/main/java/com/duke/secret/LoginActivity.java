@@ -102,6 +102,7 @@ public class LoginActivity extends BaseActivity {
 
         // Check for a valid password, if the user entered one.
         if (TextUtils.isEmpty(password)) {
+            pd.dismiss();
             mPasswordView.setError(getString(R.string.error_invalid_password));
             focusView = mPasswordView;
             cancel = true;
@@ -109,6 +110,7 @@ public class LoginActivity extends BaseActivity {
 
         // Check for a valid email address.
         if (TextUtils.isEmpty(username)) {
+            pd.dismiss();
             mUsernameView.setError(getString(R.string.error_field_required));
             focusView = mUsernameView;
             cancel = true;

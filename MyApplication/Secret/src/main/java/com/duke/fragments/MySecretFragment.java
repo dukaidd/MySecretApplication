@@ -2,8 +2,12 @@ package com.duke.fragments;
 
 import java.util.List;
 
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.ImageLoader;
+import com.android.volley.toolbox.Volley;
 import com.duke.adapters.MPlvAdapter;
 import com.duke.base.BaseFragment;
+import com.duke.base.BitmapCache;
 import com.duke.beans.Secret;
 import com.duke.beans.User;
 import com.duke.secret.HomeActivity;
@@ -17,9 +21,11 @@ import com.handmark.pulltorefresh.library.PullToRefreshListView;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -43,11 +49,16 @@ public class MySecretFragment extends BaseFragment implements OnClickListener {
 	private MPlvAdapter adapter;
 	private List<Secret> secrets;
 	private ProgressDialog pd;
+	private RequestQueue queue;
+	private ImageLoader imageLoader;
+	private ListView listView;
 
 	@Override
 	public void onAttach(Activity activity) {
 		// TODO Auto-generated method stub
 		act = (HomeActivity) activity;
+		queue = Volley.newRequestQueue(act);
+		imageLoader = new ImageLoader(queue, new BitmapCache());
 		super.onAttach(activity);
 	}
 
@@ -60,6 +71,7 @@ public class MySecretFragment extends BaseFragment implements OnClickListener {
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		pd = new ProgressDialog(act);
+		pd.setMessage("正在获取数据...");
 		pd.show();
 		initViews();
 		super.onActivityCreated(savedInstanceState);
@@ -67,7 +79,7 @@ public class MySecretFragment extends BaseFragment implements OnClickListener {
 
 	private void initViews() {
 		plv = (PullToRefreshListView) findViewById(R.id.fragment_mysecret_plv);
-		ListView listView = plv.getRefreshableView();
+		listView = plv.getRefreshableView();
 		View header = new View(act);
 		TypedValue tv = new TypedValue();
 		int hight=0;
@@ -99,6 +111,7 @@ public class MySecretFragment extends BaseFragment implements OnClickListener {
 		BmobQuery<Secret> query = new BmobQuery<Secret>();
 		query.setLimit(10);
 		query.order("-createdAt");
+		query.include("image");
 		query.addWhereEqualTo("username", BmobUser.getCurrentUser(User.class).getUsername());
 		query.findObjects(new FindListener<Secret>() {
 
@@ -128,6 +141,7 @@ public class MySecretFragment extends BaseFragment implements OnClickListener {
 				BmobQuery<Secret> query = new BmobQuery<Secret>();
 				query.setLimit(10);
 				query.order("-createdAt");
+				query.include("image");
 				query.addWhereEqualTo("username", BmobUser.getCurrentUser(User.class).getUsername());
 				query.findObjects(new FindListener<Secret>() {
 
@@ -154,6 +168,7 @@ public class MySecretFragment extends BaseFragment implements OnClickListener {
 				BmobQuery<Secret> query = new BmobQuery<Secret>();
 				query.setLimit(10 + 5 * count);
 				query.order("-createdAt");
+				query.include("image");
 				query.addWhereEqualTo("username", BmobUser.getCurrentUser(User.class).getUsername());
 				count++;
 				query.findObjects(new FindListener<Secret>() {
@@ -232,4 +247,5 @@ public class MySecretFragment extends BaseFragment implements OnClickListener {
 			return false;
 		}
 	};
+
 }

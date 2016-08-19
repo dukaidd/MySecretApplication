@@ -1,41 +1,22 @@
 package com.duke.beans;
 
 import cn.bmob.v3.BmobUser;
-import cn.bmob.v3.datatype.BmobPointer;
 import cn.bmob.v3.datatype.BmobRelation;
 
-public class User extends BmobUser {
+public class User extends BmobUser{
     private String sex;
-
     private String friends;
-    private String nick;
+    private String nickname;
     private BmobRelation friends_relation;//多对多关系：用于存储喜欢该帖子的所有用户
-    private User friends_pointer;
-    private BmobPointer avatar_pointer;
-    private String avatarUrl;
+    private String slogan;
 
-    public String getAvatarUrl() {
-        return avatarUrl;
+
+    public String getSlogan() {
+        return slogan;
     }
 
-    public void setAvatarUrl(String avatarUrl) {
-        this.avatarUrl = avatarUrl;
-    }
-
-    public BmobPointer getAvatar_pointer() {
-        return avatar_pointer;
-    }
-
-    public void setAvatar_pointer(BmobPointer avatar_pointer) {
-        this.avatar_pointer = avatar_pointer;
-    }
-
-    public User getFriends_pointer() {
-        return friends_pointer;
-    }
-
-    public void setFriends_pointer(User friends_pointer) {
-        this.friends_pointer = friends_pointer;
+    public void setSlogan(String slogan) {
+        this.slogan = slogan;
     }
 
     public BmobRelation getFriends_relation() {
@@ -46,12 +27,12 @@ public class User extends BmobUser {
         this.friends_relation = friends_relation;
     }
 
-    public String getNick() {
-        return nick;
+    public String getNickname() {
+        return nickname;
     }
 
-    public void setNick(String nick) {
-        this.nick = nick;
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
     }
 
     public String getFriends() {

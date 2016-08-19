@@ -74,6 +74,7 @@ public class AllSecretFragment extends BaseFragment {
         BmobQuery<Secret> query = new BmobQuery<Secret>();
         query.setLimit(10);
         query.include("author");
+        query.include("image");
         query.order("-createdAt");
         query.findObjects(new FindListener<Secret>() {
 
@@ -86,7 +87,6 @@ public class AllSecretFragment extends BaseFragment {
                     } else {
                         secrets = list;
                     }
-                    MyApplication.getInstance().addContactsFromSecrets(list);
                     adapter = new APlvAdapter(act, secrets);
                     plv.setAdapter(adapter);
                     if (secrets.size() == 0) {
@@ -144,8 +144,9 @@ public class AllSecretFragment extends BaseFragment {
             public void onPullDownToRefresh(PullToRefreshBase<ListView> refreshView) {
                 count = 1;
                 BmobQuery<Secret> query = new BmobQuery<Secret>();
-                query.setLimit(20);
+                query.setLimit(10);
                 query.include("author");
+                query.include("image");
                 query.order("-createdAt");
                 query.findObjects(new FindListener<Secret>() {
 
@@ -156,7 +157,6 @@ public class AllSecretFragment extends BaseFragment {
                                 return;
                             }
                             secrets = list;
-                            MyApplication.getInstance().addContactsFromSecrets(list);
                             adapter = new APlvAdapter(act, secrets);
                             plv.setAdapter(adapter);
                             plv.onRefreshComplete();
@@ -175,6 +175,7 @@ public class AllSecretFragment extends BaseFragment {
                 BmobQuery<Secret> query = new BmobQuery<Secret>();
                 query.setLimit(10 + 5 * count);
                 query.include("author");
+                query.include("image");
                 query.order("-createdAt");
                 count++;
                 query.findObjects(new FindListener<Secret>() {
@@ -190,7 +191,6 @@ public class AllSecretFragment extends BaseFragment {
                                     secrets.add(list.get(list.size() - i));
                                 }
                             }
-                            MyApplication.getInstance().addContactsFromSecrets(list);
                             adapter.notifyDataSetChanged();
                             plv.onRefreshComplete();
                         } else {

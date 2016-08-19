@@ -51,7 +51,7 @@ public class CommetRecyclerViewAdapter extends RecyclerView.Adapter<CommetRecycl
             super(view);
             avatar = (CircleImageView) view.findViewById(R.id.item_comment_avatar);
 
-            username = (TextView) view.findViewById(R.id.item_comment_username);
+            username = (TextView) view.findViewById(R.id.item_comment_nickname);
             gender = (TextView) view.findViewById(R.id.item_comment_gender);
             genderSign = (ImageView) view.findViewById(R.id.item_comment_gender_sign);
             time = (TextView) view.findViewById(R.id.item_comment_time);

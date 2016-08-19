@@ -2,24 +2,29 @@ package com.duke.fragments;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.graphics.Typeface;
 import android.os.Bundle;
-import android.os.Handler;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import com.duke.adapters.APlvAdapter;
-import com.duke.adapters.MCSFAdapter;
+import com.duke.app.MyApplication;
 import com.duke.base.BaseFragment;
 import com.duke.beans.Secret;
 import com.duke.beans.User;
 import com.duke.secret.HomeActivity;
 import com.duke.secret.R;
+import com.duke.utils.StringUtils;
+import com.handmark.pulltorefresh.library.ILoadingLayout;
+import com.handmark.pulltorefresh.library.PullToRefreshBase;
+import com.handmark.pulltorefresh.library.PullToRefreshListView;
 
 import java.util.List;
 
@@ -32,17 +37,14 @@ import static com.duke.fragments.AllSecretFragment.mTouchSlop;
 
 public class MyCollectedSecretFragment extends BaseFragment {
     private HomeActivity act;
+    private PullToRefreshListView plv;
     private List<Secret> secrets;
-    private ListView collections;
     private APlvAdapter adapter;
+    public static int REQUEST_CODE_2 = 2;
     private ProgressDialog pd;
-    private Handler handler = new Handler() {
-        public void handleMessage(android.os.Message msg) {
-            adapter = new APlvAdapter(act,secrets);
-            collections.setAdapter(adapter);
-            pd.dismiss();
-        }
-    };
+    private int count = 1;
+    private ListView listView;
+    private String curent_user;
 
     @Override
     public void onAttach(Activity activity) {
@@ -54,49 +56,139 @@ public class MyCollectedSecretFragment extends BaseFragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // TODO Auto-generated method stub
+        pd = new ProgressDialog(act);
+        pd.setMessage("正在获取数据...");
+        pd.show();
         return inflater.inflate(R.layout.fragment_mycollectedsecret, null);
     }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         // TODO Auto-generated method stub
-        initDatas();
         initViews();
+        initDatas();
         super.onActivityCreated(savedInstanceState);
     }
 
     private void initViews() {
-        collections = (ListView) act.findViewById(R.id.fragment_mycollectedsecret_lv);
-        collections.setEmptyView(findViewById(R.id.fragment_collection_empty));
+        curent_user = BmobUser.getCurrentUser(User.class).getUsername();
+        plv = (PullToRefreshListView) act.findViewById(R.id.fragment_collection_plv);
+        listView = plv.getRefreshableView();
         View header = new View(act);
         TypedValue tv = new TypedValue();
-        int hight=0;
+        int hight = 0;
         if (act.getTheme().resolveAttribute(android.R.attr.actionBarSize, tv, true)) {
             hight = TypedValue.complexToDimensionPixelSize(tv.data, act.getResources().getDisplayMetrics());
         }
-        header.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.MATCH_PARENT,hight));
+        header.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.MATCH_PARENT, hight));
         header.setBackgroundResource(R.drawable.flag);
-        collections.addHeaderView(header);
-        collections.setOnTouchListener(myTouchListener);
-        pd = new ProgressDialog(act);
-        pd.show();
+        listView.addHeaderView(header);
+        LinearLayout linearLayout = (LinearLayout) findViewById(R.id.fragment_collection_empty);
+        listView.setEmptyView(linearLayout);
+        listView.setOnTouchListener(myTouchListener);
+        plv.setMode(PullToRefreshBase.Mode.BOTH);
+        ILoadingLayout startLayout = plv.getLoadingLayoutProxy(true, false);
+        ILoadingLayout endLayout = plv.getLoadingLayoutProxy(false, true);
+        startLayout.setPullLabel("下拉刷新");
+        startLayout.setRefreshingLabel("刷新中...");
+        startLayout.setReleaseLabel("释放刷新");
+        startLayout.setLastUpdatedLabel(StringUtils.getTime(System.currentTimeMillis()).substring(11, 16));
+        endLayout.setPullLabel("上拉加载更多");
+        endLayout.setRefreshingLabel("正在加载...");
+        endLayout.setReleaseLabel("释放加载更多");
+        Typeface typeface = Typeface.createFromAsset(act.getAssets(), "fonts/mi.ttf");
+        startLayout.setTextTypeface(typeface);
+        endLayout.setTextTypeface(typeface);
+        startLayout.setLoadingDrawable(getResources().getDrawable(R.drawable.ic_wb_sunny_black_24dp));
+        endLayout.setLoadingDrawable(getResources().getDrawable(R.drawable.ic_wb_sunny_black_24dp));
+        endLayout.setLastUpdatedLabel(StringUtils.getTime(System.currentTimeMillis()).substring(11, 16));
+        plv.setOnRefreshListener(new PullToRefreshBase.OnRefreshListener2<ListView>() {
+
+            @Override
+            public void onPullDownToRefresh(PullToRefreshBase<ListView> refreshView) {
+                count = 1;
+                BmobQuery<Secret> query = new BmobQuery<Secret>();
+                query.setLimit(10);
+                query.include("author");
+                query.include("image");
+                query.order("-createdAt");
+                query.addWhereContains("collectedUsers", "|" + curent_user + "|");
+                query.findObjects(new FindListener<Secret>() {
+
+                    @Override
+                    public void done(List<Secret> list, BmobException e) {
+                        if (e == null) {
+                            if (list == null || list.equals("")) {
+                                return;
+                            }
+                            secrets = list;
+                            adapter = new APlvAdapter(act, secrets);
+                            plv.setAdapter(adapter);
+                            plv.onRefreshComplete();
+                        } else {
+                            //停止刷新动画
+                            plv.onRefreshComplete();
+                            Log.e("duke", e.toString());
+                            toast("刷新失败" + e);
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void onPullUpToRefresh(PullToRefreshBase<ListView> refreshView) {
+                BmobQuery<Secret> query = new BmobQuery<Secret>();
+                query.setLimit(10 + 5 * count);
+                query.include("author");
+                query.include("image");
+                query.addWhereContains("collectedUsers", "|" + curent_user + "|");
+                query.order("-createdAt");
+                count++;
+                query.findObjects(new FindListener<Secret>() {
+
+                    @Override
+                    public void done(List<Secret> list, BmobException e) {
+                        if (e == null) {
+                            if (list == null || list.equals("")) {
+                                return;
+                            }
+                            if (list.size() > secrets.size()) {
+                                for (int i = list.size() - secrets.size(); i > 0; i--) {
+                                    secrets.add(list.get(list.size() - i));
+                                }
+                            }
+                            adapter.notifyDataSetChanged();
+                            plv.onRefreshComplete();
+                        } else {
+                            plv.onRefreshComplete();
+                            toast("加载失败" + e);
+                            Log.i("duke", e.toString());
+                        }
+                    }
+                });
+            }
+        });
     }
 
     private void initDatas() {
         BmobQuery<Secret> query = new BmobQuery<Secret>();
-        query.setLimit(1000);
+        query.setLimit(10);
+        query.include("image");
         query.order("-createdAt");
-        String curent_user = BmobUser.getCurrentUser(User.class).getUsername();
         query.addWhereContains("collectedUsers", "|" + curent_user + "|");
         query.findObjects(new FindListener<Secret>() {
 
             @Override
             public void done(List<Secret> list, BmobException e) {
                 if (e == null) {
+                    pd.dismiss();
                     secrets = list;
-                    handler.sendEmptyMessage(1);
+                    adapter = new APlvAdapter(act, secrets);
+                    plv.setAdapter(adapter);
                 } else {
-                    Toast.makeText(act, "获取收藏失败" + e, Toast.LENGTH_SHORT).show();
+                    pd.dismiss();
+                    toast("获取收藏失败:" + e);
+                    Log.i("duke", e.toString());
                 }
             }
         });
@@ -106,10 +198,10 @@ public class MyCollectedSecretFragment extends BaseFragment {
     private float mFirstY;
     private float mCurrentY;
     private boolean mShow = true;
-    View.OnTouchListener myTouchListener = new View.OnTouchListener(){
+    View.OnTouchListener myTouchListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View v, MotionEvent event) {
-            switch (event.getAction()){
+            switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     mFirstY = event.getY();
                     break;
@@ -140,8 +232,4 @@ public class MyCollectedSecretFragment extends BaseFragment {
             return false;
         }
     };
-
-    public void scrollToTop() {
-        collections.scrollTo(0,0);
-    }
 }

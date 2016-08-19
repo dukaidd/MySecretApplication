@@ -14,6 +14,7 @@
 package com.easemob.easeui.ui;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -47,7 +48,7 @@ import java.util.Map;
  * 下载显示大图
  *
  */
-public class EaseShowBigImageActivity extends EaseBaseActivity {
+public class EaseShowBigImageActivity extends Activity {
     private static final String TAG = "ShowBigImage";
     private ProgressDialog pd;
     private EasePhotoView image;
