@@ -6,7 +6,6 @@
       <module fileurl="file://$PROJECT_DIR$/Secret/Secret.iml" filepath="$PROJECT_DIR$/Secret/Secret.iml" />
       <module fileurl="file://$PROJECT_DIR$/library_pulltorefresh/library_pulltorefresh.iml" filepath="$PROJECT_DIR$/library_pulltorefresh/library_pulltorefresh.iml" />
       <module fileurl="file://$PROJECT_DIR$/pulltorefresh/pulltorefresh.iml" filepath="$PROJECT_DIR$/pulltorefresh/pulltorefresh.iml" />
-      <module fileurl="file://$PROJECT_DIR$/pulltorefresh/pulltorefresh.iml" filepath="$PROJECT_DIR$/pulltorefresh/pulltorefresh.iml" />
     </modules>
   </component>
 </project>

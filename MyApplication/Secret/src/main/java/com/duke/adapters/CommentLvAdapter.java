@@ -109,7 +109,7 @@ public class CommentLvAdapter extends BaseAdapter implements View.OnClickListene
         vh.time.setText(comment.getCreatedAt().toString());
         vh.content.setText(comment.getContent());
         vh.chat.setTag(comment);
-        vh.avatar.setTag(comment);
+        vh.avatar.setTag(R.id.glide_tag,comment);
         vh.time.setTag(comment);
         vh.nickname.setTag(comment);
         vh.gender.setTag(comment);
@@ -131,11 +131,19 @@ public class CommentLvAdapter extends BaseAdapter implements View.OnClickListene
             case R.id.item_comment_gender:
             case R.id.item_comment_gender_sign:
             case R.id.item_comment_time:
-            case R.id.item_comment_avatar:
                 String username = comment.getUsername();
                 if(username!=null){
                     Intent intent3 = new Intent(act, FriendMsgActivity.class);
                     intent3.putExtra("author",username);
+                    act.startActivity(intent3);
+                }
+                break;
+            case R.id.item_comment_avatar:
+                Comment comment1 = (Comment) v.getTag(R.id.glide_tag);
+                String username1 = comment1.getUsername();
+                if(username1!=null){
+                    Intent intent3 = new Intent(act, FriendMsgActivity.class);
+                    intent3.putExtra("author",username1);
                     act.startActivity(intent3);
                 }
                 break;

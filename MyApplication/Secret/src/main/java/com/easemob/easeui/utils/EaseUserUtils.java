@@ -54,7 +54,7 @@ public class EaseUserUtils {
      *
      * @param username
      */
-    public static void setUserAvatar(final Context context, String username, final ImageView imageView) {
+    public static void setUserAvatar(final Context context, final String username, final ImageView imageView) {
         final EaseUser user = getUserInfo(username);
         if (user != null && user.getAvatar() != null) {
             try {
@@ -70,49 +70,42 @@ public class EaseUserUtils {
                 });
             }
         } else {
-            BmobQuery<User> query = new BmobQuery<>();
+            BmobQuery<Avatar> query = new BmobQuery<Avatar>();
+            query.order("-createdAt");
+            query.include("user");
             query.addWhereEqualTo("username", username);
-            query.findObjects(new FindListener<User>() {
+            query.findObjects(new FindListener<Avatar>() {
                 @Override
-                public void done(List<User> list, BmobException e) {
+                public void done(List<Avatar> list, BmobException e) {
                     if (e == null) {
-                        final EaseUser easeUser = new EaseUser(list.get(0).getUsername());
-                        if (list.get(0).getNickname() != null) {
-                            easeUser.setNick(list.get(0).getNickname());
-                        } else {
-                            easeUser.setNick(StringUtils.getUperCases(list.get(0).getUsername()));
+//                        if(list.size()==0||list==null||list.equals("")){
+//                            if(Util.isOnMainThread()){
+//                                Glide.with(MyApplication.getInstance()).load(R.drawable.ic_default_male).into(imageView);
+//                            }
+//                            return;
+//                        }
+                        User user = list.get(0).getUser();
+                        EaseUser easeUser = new EaseUser(username);
+                        easeUser.setAvatar(list.get(0).getAvatar().getUrl());
+                        if(user.getNickname()!=null){
+                            easeUser.setNick(user.getNickname());
+                        }else{
+                            easeUser.setNick(StringUtils.getUperCases(user.getUsername()));
                         }
-                        BmobQuery<Avatar> query = new BmobQuery<Avatar>();
-                        query.order("-createdAt");
-                        query.addWhereEqualTo("user", list.get(0));
-                        query.findObjects(new FindListener<Avatar>() {
-                            @Override
-                            public void done(List<Avatar> list, BmobException e) {
-                                if (e == null) {
-                                    easeUser.setAvatar(list.get(0).getAvatar().getUrl());
-                                    if(Util.isOnMainThread()){
-                                        Glide.with(MyApplication.getInstance()).load(list.get(0).getAvatar().getUrl()).diskCacheStrategy(DiskCacheStrategy.ALL).placeholder(R.drawable.ic_default_male).into(new SimpleTarget<GlideDrawable>() {
-                                            @Override
-                                            public void onResourceReady(GlideDrawable glideDrawable, GlideAnimation<? super GlideDrawable> glideAnimation) {
-                                                imageView.setImageDrawable(glideDrawable);
-                                            }
-                                        });
-                                    }
-
-                                    MyApplication.getInstance().allUsers.put(easeUser.getUsername(), easeUser);
-                                } else {
-                                    Log.e("duke", e.toString());
-                                    if(Util.isOnMainThread()){
-                                        Glide.with(MyApplication.getInstance()).load(R.drawable.ic_default_male).into(imageView);
-                                    }
+                        if(Util.isOnMainThread()){
+                            Glide.with(MyApplication.getInstance()).load(list.get(0).getAvatar().getUrl()).diskCacheStrategy(DiskCacheStrategy.ALL).placeholder(R.drawable.ic_default_male).into(new SimpleTarget<GlideDrawable>() {
+                                @Override
+                                public void onResourceReady(GlideDrawable glideDrawable, GlideAnimation<? super GlideDrawable> glideAnimation) {
+                                    imageView.setImageDrawable(glideDrawable);
                                 }
-                            }
-                        });
+                            });
+                        }
+                        MyApplication.getInstance().allUsers.put(easeUser.getUsername(), easeUser);
                     } else {
+                        Log.e("duke", e.toString());
                         if(Util.isOnMainThread()){
                             Glide.with(MyApplication.getInstance()).load(R.drawable.ic_default_male).into(imageView);
                         }
-                        Log.e("duke", e.toString());
                     }
                 }
             });

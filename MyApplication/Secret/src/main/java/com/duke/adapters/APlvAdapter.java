@@ -148,7 +148,7 @@ public class APlvAdapter extends BaseAdapter implements OnClickListener {
         vh.locsign.setTag(secret);
         vh.distance.setTag(secret);
         vh.image.setTag(secret);
-        vh.avatar.setTag(secret);
+        vh.avatar.setTag(R.id.glide_tag,secret);
         vh.weather.setTag(secret);
         vh.time1.setTag(secret);
         vh.nickname.setTag(secret);
@@ -196,12 +196,26 @@ public class APlvAdapter extends BaseAdapter implements OnClickListener {
             case R.id.item_aplv_weather:
             case R.id.item_aplv_time1:
             case R.id.item_aplv_nickname:
-            case R.id.item_aplv_avatar:
                 secret = (Secret) v.getTag();
+                if(secret==null){
+                    break;
+                }
                 String username = secret.getUsername();
                 if(username!=null){
                     Intent intent3 = new Intent(act, FriendMsgActivity.class);
                     intent3.putExtra("author",username);
+                    act.startActivity(intent3);
+                }
+                break;
+            case R.id.item_aplv_avatar:
+                secret = (Secret) v.getTag(R.id.glide_tag);
+                if(secret==null){
+                    break;
+                }
+                String username1 = secret.getUsername();
+                if(username1!=null){
+                    Intent intent3 = new Intent(act, FriendMsgActivity.class);
+                    intent3.putExtra("author",username1);
                     act.startActivity(intent3);
                 }
                 break;
